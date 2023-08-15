@@ -37,6 +37,7 @@ function handleTempusBrokerMessage(data) {
 }
 
 async function handler(event, context) {
+    
     logger.info(`## CONTEXT: ${serialize(context)}`);
     logger.info(`## EVENT: ${serialize(event)}`);
 
