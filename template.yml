@@ -129,10 +129,6 @@ Resources:
       VpcId: !FindInMap [EnvironmentMap, !Ref Environment, VpcId]
       SecurityGroupEgress:
         - IpProtocol: tcp
-          FromPort: 1521
-          ToPort: 1521
-          DestinationSecurityGroupId: !FindInMap [EnvironmentMap, !Ref Environment, TariffSGId]
-        - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
           CidrIp: !Ref OnPremIpRange
