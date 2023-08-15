@@ -1,0 +1,143 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: An AWS Lambda application that integrates processes scanned documents from Kofax Capture.
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    Description: Parameter for the environment
+    AllowedValues: ['dev', 'uat', 'stag', 'prod']
+  OnPremIpRange:
+    Type: String
+    Default: '192.168.0.1/16'
+    Description: "The CIDR range for CICA's on premise"
+
+Mappings:
+  EnvironmentMap:
+    dev:
+      VpcId: vpc-0e42a25379fa895ec
+      SubnetIdA: subnet-02f7ae7f6b1db987f
+      SubnetIdB: subnet-0a5e7b48efcb931ba
+    uat:
+      VpcId: vpc-0e42a25379fa895ec # needs updating
+      SubnetIdA: subnet-02f7ae7f6b1db987f # needs updating
+      SubnetIdB: subnet-02f7ae7f6b1db987f # needs updating
+    stag:
+      VpcId: vpc-0e42a25379fa895ec
+      SubnetIdA: subnet-02f7ae7f6b1db987f
+      SubnetIdB: subnet-0a5e7b48efcb931ba
+    prod:
+      VpcId: vpc-0e42a25379fa895ec # needs updating
+      SubnetIdA: subnet-02f7ae7f6b1db987f # needs updating
+      SubnetIdB: subnet-02f7ae7f6b1db987f # needs updating
+Resources:
+  function:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs18.x
+      CodeUri: function/.
+      Description: Call the AWS Lambda API
+      Timeout: 30
+      # Trigger
+      Events:
+        Trigger:
+          Type: Schedule
+          Properties:
+            Schedule: 'rate(1 minute)'
+      # Function's execution role
+      Policies:
+        # Policies defined inline for AWS Services
+        - Statement:
+            - Sid: TempusBrokerFunctionQueuePolicy
+              Effect: Allow
+              Action:
+                - sqs:ReceiveMessage
+                - sqs:DeleteMessage
+                - sqs:GetQueueAttributes
+                - kms:Encrypt
+                - kms:Decrypt
+                - kms:ReEncrypt*
+                - kms:GenerateDataKey*
+                - kms:DescribeKey
+              Resource: '*'
+            - Sid: TempusBrokerFunctionS3Policy
+              Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:DeleteObject
+                - kms:Encrypt
+                - kms:Decrypt
+                - kms:ReEncrypt*
+                - kms:GenerateDataKey*
+                - kms:DescribeKey
+              Resource: '*'
+            - Sid: TempusBrokerFunctionSecretsPolicy
+              Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - secretsmanager:GetSecretValue
+                - kms:Encrypt
+                - kms:Decrypt
+                - kms:ReEncrypt*
+                - kms:GenerateDataKey*
+                - kms:DescribeKey
+              Resource: '*'
+        - AWSLambdaBasicExecutionRole
+        - AWSLambda_ReadOnlyAccess
+        - AWSXrayWriteOnlyAccess
+      Tracing: Active
+      Layers:
+        - !Ref libs
+      VpcConfig:
+        SubnetIds:
+          [
+            !FindInMap [EnvironmentMap, !Ref Environment, SubnetIdA],
+            !FindInMap [EnvironmentMap, !Ref Environment, SubnetIdB],
+          ]
+        SecurityGroupIds: [!Ref kofaxProcessorSecurityGroup]
+  libs:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: tempus-broker-nodejs-lib
+      Description: Dependencies for the kofax scanning processor function.
+      ContentUri: lib/.
+      CompatibleRuntimes:
+        - nodejs18.x
+  scanningQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: KofaxScanningQueue
+      RedrivePolicy: 
+        deadLetterTargetArn: 
+          Fn::GetAtt: 
+            - "scanningDeadLetterQueue"
+            - "Arn"
+        maxReceiveCount: 3
+  scanningDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: KofaxScanningDeadLetterQueue
+  kofaxProcessorSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub
+        - 'KofaxScanningProcessorSecurityGroup${Env}'
+        - Env: !Ref Environment
+      GroupDescription: Security group for the kofax scanning processor lamdba function to allow communications out to Tempus.
+      VpcId: !FindInMap [EnvironmentMap, !Ref Environment, VpcId]
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 1521
+          ToPort: 1521
+          DestinationSecurityGroupId: !FindInMap [EnvironmentMap, !Ref Environment, TariffSGId]
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref OnPremIpRange
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: '0.0.0.0/0'
+  

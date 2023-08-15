@@ -1,0 +1,45 @@
+on:
+  push:
+    branches: main
+    paths-ignore:
+      - '**/*.md'
+      - '**/LICENSE'
+      - '**/.gitignore'
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: prod
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+      - uses: aws-actions/setup-sam@v2
+      - uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: GitHubWorkflow
+          aws-region: eu-west-2
+
+      # assume the relevant role via AWS Profile
+      - run: sh ./.github/scripts/assume-role-profile.sh
+        env:
+          ROLE_ARN: ${{ secrets.ASSUMED_ROLE }}
+
+      # install dependencies
+      - run: npm ci --production
+
+      # sam build
+      - run: sam build --use-container
+
+      # deploy
+      - run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --stack-name kofax-scanning-processor --resolve-s3 --capabilities CAPABILITY_IAM --region eu-west-2 --profile assumed-role --parameter-overrides Environment=prod
