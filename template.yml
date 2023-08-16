@@ -1,5 +1,5 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Transform: 'AWS::Serverless-2016-10-31'
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
 Description: An AWS Lambda application that integrates processes scanned documents from Kofax Capture.
 
 Parameters:
@@ -7,10 +7,10 @@ Parameters:
     Type: String
     Default: dev
     Description: Parameter for the environment
-    AllowedValues: ['dev', 'uat', 'stag', 'prod']
+    AllowedValues: ["dev", "uat", "stag", "prod"]
   OnPremIpRange:
     Type: String
-    Default: '192.168.0.1/16'
+    Default: "192.168.0.1/16"
     Description: "The CIDR range for CICA's on premise"
 
 Mappings:
@@ -48,48 +48,9 @@ Resources:
         Trigger:
           Type: Schedule
           Properties:
-            Schedule: 'rate(1 minute)'
+            Schedule: "rate(1 minute)"
       # Function's execution role
-      Policies:
-        # Policies defined inline for AWS Services
-        - Statement:
-            - Sid: TempusBrokerFunctionQueuePolicy
-              Effect: Allow
-              Action:
-                - sqs:ReceiveMessage
-                - sqs:DeleteMessage
-                - sqs:GetQueueAttributes
-                - kms:Encrypt
-                - kms:Decrypt
-                - kms:ReEncrypt*
-                - kms:GenerateDataKey*
-                - kms:DescribeKey
-              Resource: '*'
-            - Sid: TempusBrokerFunctionS3Policy
-              Effect: Allow
-              Action:
-                - s3:GetObject
-                - s3:DeleteObject
-                - kms:Encrypt
-                - kms:Decrypt
-                - kms:ReEncrypt*
-                - kms:GenerateDataKey*
-                - kms:DescribeKey
-              Resource: '*'
-            - Sid: TempusBrokerFunctionSecretsPolicy
-              Effect: Allow
-              Action:
-                - ssm:GetParameter
-                - secretsmanager:GetSecretValue
-                - kms:Encrypt
-                - kms:Decrypt
-                - kms:ReEncrypt*
-                - kms:GenerateDataKey*
-                - kms:DescribeKey
-              Resource: '*'
-        - AWSLambdaBasicExecutionRole
-        - AWSLambda_ReadOnlyAccess
-        - AWSXrayWriteOnlyAccess
+      Role: !Ref kofaxProcessorRole
       Tracing: Active
       Layers:
         - !Ref libs
@@ -103,30 +64,110 @@ Resources:
   libs:
     Type: AWS::Serverless::LayerVersion
     Properties:
-      LayerName: tempus-broker-nodejs-lib
+      LayerName: kofax-scanner-nodejs-lib
       Description: Dependencies for the kofax scanning processor function.
       ContentUri: lib/.
       CompatibleRuntimes:
         - nodejs18.x
+  kofaxProcessorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambda_ReadOnlyAccess
+        - arn:aws:iam::aws:policy/service-role/AWSXrayWriteOnlyAccess
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: KofaxScannerFunctionQueuePolicy
+                Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: "*"
+              - Sid: KofaxScannerFunctionS3Policy
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:DeleteObject
+                  - s3:PutObject
+                Resource: "*"
+              - Sid: KofaxScannerFunctionSecretsPolicy
+                Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - secretsmanager:GetSecretValue
+                Resource: "*"
+              - Sid: KofaxScannerKmsPolicy
+                Effect: Allow
+                Action:
+                  - kms:Encrypt
+                  - kms:Decrypt
+                  - kms:ReEncrypt*
+                  - kms:GenerateDataKey*
+                  - kms:DescribeKey
+                Resource: "*"       
   scanningQueue:
     Type: AWS::SQS::Queue
     Properties:
+      FifoQueue: true
       QueueName: KofaxScanningQueue
-      RedrivePolicy: 
-        deadLetterTargetArn: 
-          Fn::GetAtt: 
-            - "scanningDeadLetterQueue"
-            - "Arn"
+      KmsMasterKeyId: !Ref scanningQueueKey
+      RedrivePolicy:
+        deadLetterTargetArn:
+          !GetAtt scanningDeadLetterQueue.Arn
         maxReceiveCount: 3
   scanningDeadLetterQueue:
     Type: AWS::SQS::Queue
     Properties:
+      FifoQueue: true
       QueueName: KofaxScanningDeadLetterQueue
+      KmsMasterKeyId: !Ref scanningQueueKey
+  scanningQueueKey:
+    Type: "AWS::KMS::Key"
+    Properties:
+      Description: A symmetric encryption KMS key to encrypt the Kofax Scanning queues
+      EnableKeyRotation: true
+      PendingWindowInDays: 20
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: kofax-scanning-key-policy
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'             
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: Allow use of the key
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt kofaxProcessorRole.Arn
+            Action:
+              - "kms:DescribeKey"
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey"
+              - "kms:GenerateDataKeyWithoutPlaintext"
+            Resource: "*"
   kofaxProcessorSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: !Sub
-        - 'KofaxScanningProcessorSecurityGroup${Env}'
+        - "KofaxScanningProcessorSecurityGroup${Env}"
         - Env: !Ref Environment
       GroupDescription: Security group for the kofax scanning processor lamdba function to allow communications out to Tempus.
       VpcId: !FindInMap [EnvironmentMap, !Ref Environment, VpcId]
@@ -138,5 +179,4 @@ Resources:
         - IpProtocol: tcp
           FromPort: 0
           ToPort: 65535
-          CidrIp: '0.0.0.0/0'
-  
+          CidrIp: "0.0.0.0/0"
