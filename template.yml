@@ -37,6 +37,9 @@ Resources:
     Properties:
       Handler: index.handler
       Runtime: nodejs18.x
+      Environment:
+        Variables:
+          SCANNING_QUEUE: !Ref scanningQueue
       CodeUri: function/.
       Description: Call the AWS Lambda API
       Timeout: 30
