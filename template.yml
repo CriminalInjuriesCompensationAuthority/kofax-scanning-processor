@@ -50,7 +50,7 @@ Resources:
           Properties:
             Schedule: "rate(1 minute)"
       # Function's execution role
-      Role: !Ref kofaxProcessorRole
+      Role: !GetAtt kofaxProcessorRole.Arn
       Tracing: Active
       Layers:
         - !Ref libs
