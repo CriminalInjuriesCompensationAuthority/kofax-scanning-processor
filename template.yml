@@ -127,9 +127,9 @@ Resources:
       KmsMasterKeyId: !Ref scanningQueueKey
       RedrivePolicy:
         deadLetterTargetArn:
-          !GetAtt scanningDeadLetterQueue.Arn
+          !GetAtt scanningDLQ.Arn
         maxReceiveCount: 3
-  scanningDeadLetterQueue:
+  scanningDLQ:
     Type: AWS::SQS::Queue
     Properties:
       FifoQueue: true
