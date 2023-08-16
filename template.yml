@@ -133,7 +133,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       FifoQueue: true
-      QueueName: KofaxScanningDeadLetterQueue
+      QueueName: KofaxScanningDLQ
       KmsMasterKeyId: !Ref scanningQueueKey
   scanningQueueKey:
     Type: "AWS::KMS::Key"
