@@ -11,7 +11,7 @@ start:
 
 create-source-bucket:
 	aws --endpoint-url=http://localhost:4566 s3 mb s3://scanning-source-bucket
-
+	
 create-destination-bucket:
 	aws --endpoint-url=http://localhost:4566 s3 mb s3://scanning-destination-bucket
 
@@ -22,5 +22,5 @@ create-parameters:
 create-queue:
 	aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name scanning-queue
 
-send-message:
-	aws --endpoint-url=http://localhost:4566 sqs send-message --queue-url "http://localhost:4566/000000000000/scanning-queue" --message-body "temp"
+create-source-bucket-notification:
+	aws --endpoint-url=http://localhost:4566 s3api put-bucket-notification-configuration --bucket scanning-source-bucket --notification-configuration file://aws-local-resources/notification-configuration.json

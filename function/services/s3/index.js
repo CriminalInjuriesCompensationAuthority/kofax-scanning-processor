@@ -1,7 +1,7 @@
 'use strict';
 
 const AWSXRay = require('aws-xray-sdk');
-const {S3Client, GetObjectCommand, DeleteObjectCommand} = require('@aws-sdk/client-s3');
+const {S3Client, GetObjectCommand, DeleteObjectCommand, ListObjectsV2Command} = require('@aws-sdk/client-s3');
 const logger = require('../logging/logger');
 
 // Creates the S3 Client with a given profile
@@ -33,6 +33,35 @@ async function retrieveObjectFromBucket(bucket, objectKey) {
     }
 }
 
+// Gets multiple object from a bucket based on a given prefix
+async function retrieveObjectsFromBucket(bucket, objectPrefix) {
+    const listCommand = new ListObjectsV2Command({
+        Bucket: bucket,
+        Prefix: objectPrefix
+    });
+
+    let keys;
+    try {
+        const response = await s3Client.send(command);
+        keys = response.Contents.map(obj => obj.Key);
+    } catch (error) {
+        logger.error(error);
+        throw error;
+    }
+
+    let objects = [];
+
+    for (const key in keys) {
+        const s3Obj = await retrieveObjectFromBucket(bucket, key);
+        objects.push({
+            Key: key,
+            Object: s3Obj
+        });
+    }
+
+    return objects;
+}
+
 async function deleteObjectFromBucket(bucket, objectKey) {
     const input = {
         Bucket: bucket,
@@ -42,4 +71,4 @@ async function deleteObjectFromBucket(bucket, objectKey) {
     return s3Client.send(command);
 }
 
-module.exports = {retrieveObjectFromBucket, deleteObjectFromBucket};
+module.exports = {retrieveObjectFromBucket, retrieveObjectsFromBucket, deleteObjectFromBucket};

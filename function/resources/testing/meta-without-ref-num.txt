@@ -1,0 +1,1 @@
+"T_BW Scan","T_SPP_Barcode","{$ConnectionString}","Dsn=ORACONN_UAT;uid=TEST_SQL;pwd=SCANNING","{$SKIP}","FALSE","BarcodeQRSep","48DBCE2E18F3485C8EC7C1D46BCC14D8-PILD-001","BarcodeResult","VALID","Barcode3of9New","","\\10.10.10.12\kofax-storage-gateway-bucket\T_BW Scan\245506\245506.pdf"

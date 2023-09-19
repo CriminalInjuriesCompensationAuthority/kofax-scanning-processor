@@ -1,10 +1,10 @@
 {
     "Messages": [
         {
-            "MessageId": "a371acba-00e9-426e-b385-f6e18c5d2eef",
-            "ReceiptHandle": "NTVkMWJjOTgtNDcwOS00NWVkLWFlMTAtYzA5ZGEzM2M0MmRiIGFybjphd3M6c3FzOmV1LXdlc3QtMjowMDAwMDAwMDAwMDA6YXBwbGljYXRpb24tcXVldWUgYTM3MWFjYmEtMDBlOS00MjZlLWIzODUtZjZlMThjNWQyZWVmIDE2ODU2MTU0MDMuODYwNjA4Mw==",
-            "MD5OfBody": "2e9bcc95e74440dba14a8774414bbaa8",
-            "Body": "temp"
+            "MessageId": "598aab1b-0c89-40fb-a012-008cf75150f6",
+            "ReceiptHandle": "ZjdhOGU2Y2MtYzEzOS00YjRlLTgxYTctZDdlY2MyZjgwZjQ0IGFybjphd3M6c3FzOmV1LXdlc3QtMjowMDAwMDAwMDAwMDA6c2Nhbm5pbmctcXVldWUgNTk4YWFiMWItMGM4OS00MGZiLWEwMTItMDA4Y2Y3NTE1MGY2IDE2OTIxOTg3MzMuNzg2NDY2OA==",
+            "MD5OfBody": "f145b932f4fb40946b404b5c955748fe",
+            "Body": "{\"Records\": [{\"eventVersion\": \"2.1\", \"eventSource\": \"aws:s3\", \"awsRegion\": \"eu-west-2\", \"eventTime\": \"2023-08-16T15:09:39.438Z\", \"eventName\": \"ObjectCreated:Put\", \"userIdentity\": {\"principalId\": \"AIDAJDPLRKLG7UEXAMPLE\"}, \"requestParameters\": {\"sourceIPAddress\": \"127.0.0.1\"}, \"responseElements\": {\"x-amz-request-id\": \"5790a3b0\", \"x-amz-id-2\": \"eftixk72aD6Ap51TnqcoF8eFidJG9Z/2\"}, \"s3\": {\"s3SchemaVersion\": \"1.0\", \"configurationId\": \"2411e7ff\", \"bucket\": {\"name\": \"scanning-source-bucket\", \"ownerIdentity\": {\"principalId\": \"A3NL1KOZZKExample\"}, \"arn\": \"arn:aws:s3:::scanning-source-bucket\"}, \"object\": {\"key\": \"lorem-ipsum.pdf\", \"sequencer\": \"0055AED6DCD90281E5\", \"size\": 70011, \"eTag\": \"eb18caac6031e55896d9c6f36591fac4\"}}}]}"
         }
     ]
 }
