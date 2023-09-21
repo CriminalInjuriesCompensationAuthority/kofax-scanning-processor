@@ -14,7 +14,7 @@ function serialize(object) {
 
 function parseLocation(response) {
     const body = JSON.parse(response.Messages[0].Body).Records[0];
-    
+
 
     const bucket = body.s3.bucket.name;
     const key = metadataService.unescape(decodeURIComponent(body.s3.object.key));
@@ -77,27 +77,29 @@ async function handler(event, context) {
 
         // If CRN exists, set it as the prefix, otherwise set a generic holding location
         const prefix = refNumber ?? 'scanned-documents';
-        
+
         // Upload the file to S3
         logger.info(`Uploading ${scannedDocument.Key.split('\\').pop()}. to bucket ${destinationBucketName}`);
         await s3Service.putObjectInBucket(destinationBucketName, scannedDocument.Object, `${prefix}/${scannedDocument.Key.split('\\').pop()}`, 'application/pdf');
 
-        // Delete the original objects from the Storage Gateway bucket
-        for (const obj in scannedObjects) {
-            logger.info(`Deleting ${scannedObjects[obj].Key} from S3 bucket ${scanLocation.Bucket}`);
-            await s3Service.deleteObjectFromBucket(scanLocation.Bucket, scannedObjects[obj].Key);
+        // TODO: Temporarily commenting out deletion from source bucket, and callout to KTA, to facilitate deployment and testing
+        if (false) {
+            // Delete the original objects from the Storage Gateway bucket
+            for (const obj in scannedObjects) {
+                logger.info(`Deleting ${scannedObjects[obj].Key} from S3 bucket ${scanLocation.Bucket}`);
+                await s3Service.deleteObjectFromBucket(scanLocation.Bucket, scannedObjects[obj].Key);
+            }
+
+            logger.info('Call out to KTA SDK');
+            const sessionId = await getParameter('kta-session-id');
+
+            const inputVars = [
+                // {Id: 'pTARIFF_REFERENCE', Value: extractTariffReference(s3ApplicationData)},
+                // {Id: 'pSUMMARY_URL', Value: `s3://${bucketName}/${Object.values(s3Keys)[0]}`}
+            ];
+
+            await createJob(sessionId, 'temp', inputVars);
         }
-
-        logger.info('Call out to KTA SDK');
-        const sessionId = await getParameter('kta-session-id');
-
-        const inputVars = [
-            // {Id: 'pTARIFF_REFERENCE', Value: extractTariffReference(s3ApplicationData)},
-            // {Id: 'pSUMMARY_URL', Value: `s3://${bucketName}/${Object.values(s3Keys)[0]}`}
-        ];
-
-        await createJob(sessionId, 'temp', inputVars);
-        
     }
     catch (error) {
         logger.error(error);
