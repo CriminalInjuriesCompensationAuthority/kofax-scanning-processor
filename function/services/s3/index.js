@@ -52,9 +52,9 @@ async function retrieveObjectsFromBucket(bucket, objectPrefix) {
     let objects = [];
 
     for (const key in keys) {
-        const s3Obj = await retrieveObjectFromBucket(bucket, key);
+        const s3Obj = await retrieveObjectFromBucket(bucket, keys[key]);
         objects.push({
-            Key: key,
+            Key: keys[key],
             Object: s3Obj
         });
     }
@@ -81,10 +81,10 @@ async function putObjectInBucket(bucket, object, key, contentType) {
 
     try {
         const response = await s3Client.send(command);
-        res(response);
+        return response;
     } catch (err) {
         logger.error(err);
-        rej(err);
+        throw err;
     }
 }
 

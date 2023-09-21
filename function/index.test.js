@@ -4,6 +4,8 @@ const fs = require('fs');
 const {handler, parseLocation} = require('./index');
 
 describe.only('Kofax scanning processorfunction', () => {
+    jest.setTimeout(60000);
+
     it.only('Should run the function handler', async () => {
         jest.setTimeout(60000);
         const response = await handler({}, null);

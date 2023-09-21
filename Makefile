@@ -23,6 +23,7 @@ create-queue:
 
 create-source-bucket-notification:
 	aws --endpoint-url=http://localhost:4566 s3api put-bucket-notification-configuration --bucket scanning-source-bucket --notification-configuration file://aws-local-resources/notification-configuration.json
+	aws --endpoint-url=http://localhost:4566 sqs purge-queue --queue-url http://localhost:4566/000000000000/scanning-queue
 
 upload-to-bucket:
 	aws --endpoint-url=http://localhost:4566 s3api put-object --bucket scanning-source-bucket --key "T_BW_SCAN\123456\123456.pdf" --body "./function/resources/testing/lorem-ipsum.pdf" --content-type=application/pdf
@@ -30,3 +31,9 @@ upload-to-bucket:
 
 purge-queue:
 	aws --endpoint-url=http://localhost:4566 sqs purge-queue --queue-url http://localhost:4566/000000000000/scanning-queue
+
+list-objects-destination:
+	aws --endpoint-url=http://localhost:4566 s3api list-objects-v2 --bucket scanning-destination-bucket
+
+download-from-s3:
+	aws --endpoint-url=http://localhost:4566 s3api get-object --bucket scanning-destination-bucket --key 22-751262/123456.pdf 123456.pdf

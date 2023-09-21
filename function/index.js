@@ -6,6 +6,7 @@ const metadataService = require('./services/metadata/index')
 const createSqsService = require('./services/sqs/index');
 const getParameter = require('./services/ssm');
 const logger = require('./services/logging/logger');
+var path = require('path');
 
 function serialize(object) {
     return JSON.stringify(object, null, 2);
@@ -64,7 +65,9 @@ async function handler(event, context) {
         // validateFiles(scannedObjects)
 
         // Parse Metadata object into JS Object
-        const metadata = metadataService.parseMetadata(scannedObjects.find(obj => obj.Key.endsWith('.txt')).Body.transformToString());
+        const rawMetadata = scannedObjects.find(obj => obj.Key.endsWith('.txt')).Object;
+        const meatadataString = await rawMetadata.transformToString();
+        const metadata = metadataService.parseMetadata(meatadataString);
 
         // Get our file for upload
         const scannedDocument = scannedObjects.find(obj => obj.Key.endsWith('.pdf'));
@@ -76,13 +79,13 @@ async function handler(event, context) {
         const prefix = refNumber ?? 'scanned-documents';
         
         // Upload the file to S3
-        logger.info(`Uploading ${scannedDocument.Key} to bucket ${bucketName}`);
-        s3Service.putObjectInBucket(destinationBucketName, scannedDocument.Body, `${prefix}/${scannedDocument.Key}`, 'application/pdf');
+        logger.info(`Uploading ${scannedDocument.Key.split('\\').pop()}. to bucket ${destinationBucketName}`);
+        await s3Service.putObjectInBucket(destinationBucketName, scannedDocument.Object, `${prefix}/${scannedDocument.Key.split('\\').pop()}`, 'application/pdf');
 
         // Delete the original objects from the Storage Gateway bucket
         for (const obj in scannedObjects) {
-            logger.info(`Deleting ${obj.Key} from S3 bucket ${bucketName}`);
-            await s3Service.deleteObjectFromBucket(bucketName, obj.Key);
+            logger.info(`Deleting ${scannedObjects[obj].Key} from S3 bucket ${scanLocation.Bucket}`);
+            await s3Service.deleteObjectFromBucket(scanLocation.Bucket, scannedObjects[obj].Key);
         }
 
         logger.info('Call out to KTA SDK');
