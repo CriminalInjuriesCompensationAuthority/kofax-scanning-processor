@@ -1,0 +1,10 @@
+{
+    "QueueConfigurations": [
+        {
+            "QueueArn": "arn:aws:sqs:eu-west-2:000000000000:scanning-queue",
+            "Events": [
+                "s3:ObjectCreated:*"
+            ]
+        }
+    ]
+}
