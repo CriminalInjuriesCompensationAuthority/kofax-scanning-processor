@@ -1,0 +1,44 @@
+{
+    "Messages": [
+        {
+            "Body": {
+                "Records": [
+                    {
+                        "eventVersion": "2.1",
+                        "eventSource": "aws:s3",
+                        "awsRegion": "eu-west-2",
+                        "eventTime": "2023-08-16T15:09:39.438Z",
+                        "eventName": "ObjectCreated:Put",
+                        "userIdentity": {
+                            "principalId": "AIDAJDPLRKLG7UEXAMPLE"
+                        },
+                        "requestParameters": {
+                            "sourceIPAddress": "127.0.0.1"
+                        },
+                        "responseElements": {
+                            "x-amz-request-id": "5790a3b0",
+                            "x-amz-id-2": "eftixk72aD6Ap51TnqcoF8eFidJG9Z2"
+                        },
+                        "s3": {
+                            "s3SchemaVersion": "1.0",
+                            "configurationId": "2411e7ff",
+                            "bucket": {
+                                "name": "scanning-source-bucket",
+                                "ownerIdentity": {
+                                    "principalId": "A3NL1KOZZKExample"
+                                },
+                                "arn": "arn:aws:s3:::scanning-source-bucket"
+                            },
+                            "object": {
+                                "key": "lorem-ipsum.pdf",
+                                "sequencer": "0055AED6DCD90281E5",
+                                "size": 70011,
+                                "eTag": "eb18caac6031e55896d9c6f36591fac4"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}
