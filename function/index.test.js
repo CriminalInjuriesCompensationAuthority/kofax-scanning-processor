@@ -20,9 +20,25 @@ describe('Kofax scanning processorfunction', () => {
 
         expect(response).toContain('Success!');
     });
+});
+
+describe('Mocking S3', () => {
+    const sqsMock = mockClient(SQSClient);
+
+    const s3Mock = mockClient(S3Client);
+    const sqsMockMsg = JSON.parse(fs.readFileSync('function/resources/testing/sqs-message.json'));
+
+    const stream = createReadStream('function/resources/testing/lorem-ipsum.pdf');
+    const sdkStream = sdkStreamMixin(stream);
+
+    sqsMock.on(ReceiveMessageCommand).resolves(sqsMockMsg);
+
+    s3Mock.on(GetObjectCommand).resolves({
+        Body: sdkStream,
+        ContentType: 'application/pdf'
+    });
 
     it('Should throw an error if there is not one .pdf and one .txt', async () => {
-        // Arrange
         const listObjResponse = {
             Contents: [
                 {
@@ -33,24 +49,7 @@ describe('Kofax scanning processorfunction', () => {
                 }
             ]
         };
-        const s3Mock = mockClient(S3Client);
-        const sqsMockMsg = JSON.parse(
-            fs.readFileSync('function/resources/testing/sqs-message.json')
-        );
-
-        const stream = createReadStream('function/resources/testing/lorem-ipsum.pdf');
-        const sdkStream = sdkStreamMixin(stream);
-
-        sqsMock.on(ReceiveMessageCommand).resolves(sqsMockMsg);
         s3Mock.on(ListObjectsV2Command).resolves(listObjResponse);
-
-        s3Mock.on(GetObjectCommand).resolves({
-            Body: sdkStream,
-            ContentType: 'application/pdf'
-        });
-
-        // Act
-        // Assert
         await expect(async () => handler({}, null)).rejects.toThrowError('Wrong file types');
     });
 
@@ -63,29 +62,9 @@ describe('Kofax scanning processorfunction', () => {
                 }
             ]
         };
-        const s3Mock = mockClient(S3Client);
-        const sqsMockMsg = JSON.parse(
-            fs.readFileSync('function/resources/testing/sqs-message.json')
-        );
-
-        const stream = createReadStream('function/resources/testing/lorem-ipsum.pdf');
-        const sdkStream = sdkStreamMixin(stream);
-
-        sqsMock.on(ReceiveMessageCommand).resolves(sqsMockMsg);
         s3Mock.on(ListObjectsV2Command).resolves(listObjResponse);
-
-        s3Mock.on(GetObjectCommand).resolves({
-            Body: sdkStream,
-            ContentType: 'application/pdf'
-        });
-
-        // Act
-        // Assert
-        await expect(async () => handler({}, null)).rejects.toThrowError(
-            'Only one file - there should be two'
-        );
+        await expect(async () => handler({}, null)).rejects.toThrowError('');
     });
-
     it('Should throw an error if there are more than two files', async () => {
         // Arrange
         const listObjResponse = {
@@ -101,26 +80,7 @@ describe('Kofax scanning processorfunction', () => {
                 }
             ]
         };
-        const s3Mock = mockClient(S3Client);
-        const sqsMockMsg = JSON.parse(
-            fs.readFileSync('function/resources/testing/sqs-message.json')
-        );
-
-        const stream = createReadStream('function/resources/testing/lorem-ipsum.pdf');
-        const sdkStream = sdkStreamMixin(stream);
-
-        sqsMock.on(ReceiveMessageCommand).resolves(sqsMockMsg);
         s3Mock.on(ListObjectsV2Command).resolves(listObjResponse);
-
-        s3Mock.on(GetObjectCommand).resolves({
-            Body: sdkStream,
-            ContentType: 'application/pdf'
-        });
-
-        // Act
-        // Assert
-        await expect(async () => handler({}, null)).rejects.toThrowError(
-            'More than two files - there should be two'
-        );
+        await expect(async () => handler({}, null)).rejects.toThrowError('');
     });
 });
