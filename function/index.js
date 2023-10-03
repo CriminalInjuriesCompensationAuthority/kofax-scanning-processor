@@ -30,17 +30,17 @@ function parseLocation(response) {
 function validateFiles(messageObjects) {
     // check length of message queue is only 2
     if (messageObjects.length > 2) {
-        throw Error('More than two files - there should be two');
+        throw Error(`${messageObjects.length} files passed in - there should be 2`);
     }
     if (messageObjects.length < 2) {
-        throw Error('Only one file - there should be two');
+        throw Error('Only 1 file - there should be 2');
     }
     // check one item is a pdf and one is a txt
     if (
         !(messageObjects[0].Key.endsWith('.txt') && messageObjects[1].Key.endsWith('.pdf')) &&
         !(messageObjects[0].Key.endsWith('.pdf') && messageObjects[1].Key.endsWith('.txt'))
     ) {
-        throw Error('Wrong file types');
+        throw Error('Wrong file types - must be one txt and one pdf');
     }
 }
 
