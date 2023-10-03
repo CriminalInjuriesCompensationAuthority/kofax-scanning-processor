@@ -56,7 +56,9 @@ describe('Mocking S3', () => {
             ]
         };
         s3Mock.on(ListObjectsV2Command).resolves(listObjResponse);
-        await expect(async () => handler({}, null)).rejects.toThrowError('Wrong file types');
+        await expect(async () => handler({}, null)).rejects.toThrowError(
+            'Wrong file types - must be one txt and one pdf'
+        );
     });
 
     it('Should throw an error if there is only one file', async () => {
@@ -68,7 +70,9 @@ describe('Mocking S3', () => {
             ]
         };
         s3Mock.on(ListObjectsV2Command).resolves(listObjResponse);
-        await expect(async () => handler({}, null)).rejects.toThrowError('');
+        await expect(async () => handler({}, null)).rejects.toThrowError(
+            'Only 1 file - there should be 2'
+        );
     });
 
     it('Should throw an error if there are more than two files', async () => {
@@ -86,6 +90,8 @@ describe('Mocking S3', () => {
             ]
         };
         s3Mock.on(ListObjectsV2Command).resolves(listObjResponse);
-        await expect(async () => handler({}, null)).rejects.toThrowError('');
+        await expect(async () => handler({}, null)).rejects.toThrowError(
+            '3 files passed in - there should be 2'
+        );
     });
 });
