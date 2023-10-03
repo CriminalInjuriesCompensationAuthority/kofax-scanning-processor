@@ -71,7 +71,7 @@ describe('Mocking S3', () => {
         };
         s3Mock.on(ListObjectsV2Command).resolves(listObjResponse);
         await expect(async () => handler({}, null)).rejects.toThrowError(
-            'Only 1 file - there should be 2'
+            '1 files passed in - there should be 2'
         );
     });
 

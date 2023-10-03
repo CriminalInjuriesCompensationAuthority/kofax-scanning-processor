@@ -29,11 +29,8 @@ function parseLocation(response) {
 
 function validateFiles(messageObjects) {
     // check length of message queue is only 2
-    if (messageObjects.length > 2) {
+    if (messageObjects.length !== 2) {
         throw Error(`${messageObjects.length} files passed in - there should be 2`);
-    }
-    if (messageObjects.length < 2) {
-        throw Error('Only 1 file - there should be 2');
     }
     // check one item is a pdf and one is a txt
     if (
