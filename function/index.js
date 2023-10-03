@@ -67,8 +67,6 @@ async function handler(event, context) {
     logger.info('Message received from SQS queue: ', message);
 
     try {
-        const destinationBucketName = await getParameter('kta-bucket-name');
-
         const scanLocation = parseLocation(response);
 
         const scannedObjects = await s3Service.retrieveObjectsFromBucket(
@@ -95,6 +93,8 @@ async function handler(event, context) {
 
         // If CRN exists, set it as the prefix, otherwise set a generic holding location
         const prefix = refNumber ?? 'scanned-documents';
+
+        const destinationBucketName = await getParameter('kta-bucket-name');
 
         // Upload the file to S3
         logger.info(
