@@ -19,6 +19,12 @@ describe('Kofax scanning processorfunction', () => {
         const response = await handler({}, null);
         expect(response).toContain('Success!');
     });
+
+    it('Should error if there are no messages to consume', async () => {
+        sqsMock.on(ReceiveMessageCommand).resolves(undefined);
+        const response = await handler({}, null);
+        expect(response).toBe('Nothing to process');
+    });
 });
 
 describe('Mocking S3', () => {
