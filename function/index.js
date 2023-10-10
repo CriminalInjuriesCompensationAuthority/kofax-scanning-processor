@@ -6,6 +6,7 @@ const metadataService = require('./services/metadata/index');
 const createSqsService = require('./services/sqs/index');
 const getParameter = require('./services/ssm');
 const logger = require('./services/logging/logger');
+const createJob = require('./services/kta/index');
 
 function serialize(object) {
     return JSON.stringify(object, null, 2);
@@ -55,11 +56,10 @@ async function handler(event, context) {
     const response = await sqsService.receiveSQS(receiveInput);
 
     // Return early if there are no messages to consume.
-    if (!response.Messages) {
+    if (response?.Messages === undefined || response?.Messages === null) {
         logger.info('No messages received');
         return 'Nothing to process';
     }
-
     const message = response.Messages[0];
     logger.info('Message received from SQS queue: ', message);
 
@@ -105,23 +105,27 @@ async function handler(event, context) {
         );
 
         // TODO: Temporarily commenting out deletion from source bucket, and callout to KTA, to facilitate deployment and testing
-        // if (false) {
-        //     // Delete the original objects from the Storage Gateway bucket
-        //     for (const obj in scannedObjects) {
-        //         logger.info(`Deleting ${scannedObjects[obj].Key} from S3 bucket ${scanLocation.Bucket}`);
-        //         await s3Service.deleteObjectFromBucket(scanLocation.Bucket, scannedObjects[obj].Key);
-        //     }
-
-        //     logger.info('Call out to KTA SDK');
-        //     const sessionId = await getParameter('kta-session-id');
-
-        //     const inputVars = [
-        //         // {Id: 'pTARIFF_REFERENCE', Value: extractTariffReference(s3ApplicationData)},
-        //         // {Id: 'pSUMMARY_URL', Value: `s3://${bucketName}/${Object.values(s3Keys)[0]}`}
-        //     ];
-
-        //     await createJob(sessionId, 'temp', inputVars);
+        // Delete the original objects from the Storage Gateway bucket
+        // for (const obj in scannedObjects) {
+        //     logger.info(`Deleting ${scannedObjects[obj].Key} from S3 bucket ${scanLocation.Bucket}`);
+        //     await s3Service.deleteObjectFromBucket(scanLocation.Bucket, scannedObjects[obj].Key);
         // }
+
+        if (!(process.env.NODE_ENV === 'local' || process.env.NODE_ENV === 'test')) {
+            logger.info('Call out to KTA SDK');
+            const sessionId = await getParameter('kta-session-id');
+            const inputVars = [
+                {Id: 'BATCH_DATA', Value: metadata['{Batch ID}']},
+                {Id: 'BATCH_NAME', Value: metadata['{Batch Name}']},
+                {Id: 'pDOCUMENT_NAME', Value: metadata.BarcodeQRSep},
+                {Id: 'pDOCUMENT_PATH', Value: `s3://${destinationBucketName}/${prefix}`},
+                {Id: 'pINDEX_DATA', Value: metadata['{Document ID}']},
+                {Id: 'REF_NO', Value: metadata.FinalRefNo},
+                {Id: 'REF_YEAR', Value: metadata.FinalRefYear}
+            ];
+            logger.info(`InputVars: ${JSON.stringify(inputVars)}`);
+            await createJob(sessionId, 'Process AWS scanned document', inputVars);
+        }
     } catch (error) {
         logger.error(error);
         throw error;
