@@ -18,7 +18,11 @@ const s3Client = AWSXRay.captureAWSv3Client(
     })
 );
 
-// Gets an object from a bucket based on key
+/**
+ * Gets an object from a bucket based on key
+ * @param {string} bucket - The bucket to get the object from
+ * @param {string} objectKey  - The key of the object in S3
+ */
 async function retrieveObjectFromBucket(bucket, objectKey) {
     const command = new GetObjectCommand({
         Bucket: bucket,
@@ -33,7 +37,11 @@ async function retrieveObjectFromBucket(bucket, objectKey) {
     }
 }
 
-// Gets multiple object from a bucket based on a given prefix
+/**
+ * Gets multiple object from a bucket based on a given prefix
+ * @param {string} bucket - The bucket to get the object from
+ * @param {string} objectPrefix  - The prefix of the folder the objects are kept in (calculated from the ref no.)
+ */
 async function retrieveObjectsFromBucket(bucket, objectPrefix) {
     const listCommand = new ListObjectsV2Command({
         Bucket: bucket,

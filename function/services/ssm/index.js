@@ -3,7 +3,11 @@
 const {SSMClient, GetParameterCommand} = require('@aws-sdk/client-ssm');
 const AWSXRay = require('aws-xray-sdk');
 
-// Gets a parameter with a given name using SSM
+/**
+ * Gets a parameter with a given name using SSM
+ * @param {string} secretName - name of secret for parameter
+ * @returns value of parameter
+ */
 async function getParameter(secretName) {
     AWSXRay.setContextMissingStrategy('IGNORE_ERROR');
     const client = AWSXRay.captureAWSv3Client(
