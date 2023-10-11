@@ -24,6 +24,8 @@ jobs:
           node-version: 18
           cache: 'npm'
       - uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
       - uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
@@ -35,8 +37,8 @@ jobs:
         env:
           ROLE_ARN: ${{ secrets.ASSUMED_ROLE }}
 
-      # install dependencies
-      - run: npm ci --production
+      # install dependencies into a lambda layer
+      - run: sh ./.github/scripts/build-layer.sh
 
       # sam build
       - run: sam build --use-container
