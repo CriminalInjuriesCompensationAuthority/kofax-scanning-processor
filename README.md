@@ -37,6 +37,7 @@ Add an .env file containing:
    ```
    NODE_ENV = 'local'
    SCANNING_QUEUE='http://localhost:4566/000000000000/scanning-queue'
+   DEFAULT_PREFIX = 'scanned-documents'
    ```
 
 Configure local code:
