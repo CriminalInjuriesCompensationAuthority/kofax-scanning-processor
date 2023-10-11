@@ -83,51 +83,54 @@ async function handler(event, context) {
         // Get our file for upload
         const scannedDocument = scannedObjects.find(obj => obj.Key.endsWith('.pdf'));
 
+        // Default prefix to use for upload key
+        const prefix = process.env.DEFAULT_PREFIX;
+
         // Get CRN (if exists) from metadata object
         const refNumber = metadata.FinalRefNo
             ? `${metadata.FinalRefYear}-${metadata.FinalRefNo}`
             : undefined;
 
-        // If CRN exists, set it as the prefix, otherwise set a generic holding location
-        const prefix = refNumber ?? 'scanned-documents';
+        // If document is un-barcoded and has a reference number, use this as the prefix
+        if (!metadata.BarcodeQRSep && refNumber) {
+            prefix = refNumber;
+        }
 
         const destinationBucketName = await getParameter('kta-bucket-name');
+        const fileName = scannedDocument.Key.split('\\').pop();
 
         // Upload the file to S3
         logger.info(
-            `Uploading ${scannedDocument.Key.split('\\').pop()}. to bucket ${destinationBucketName}`
+            `Uploading ${fileName}. to bucket ${destinationBucketName}`
         );
         await s3Service.putObjectInBucket(
             destinationBucketName,
             scannedDocument.Object,
-            `${prefix}/${scannedDocument.Key.split('\\').pop()}`,
+            `${prefix}/${fileName}`,
             'application/pdf'
         );
-
-        // TODO: Temporarily commenting out deletion from source bucket, and callout to KTA, to facilitate deployment and testing
-        // Delete the original objects from the Storage Gateway bucket
-        // for (const obj in scannedObjects) {
-        //     logger.info(`Deleting ${scannedObjects[obj].Key} from S3 bucket ${scanLocation.Bucket}`);
-        //     await s3Service.deleteObjectFromBucket(scanLocation.Bucket, scannedObjects[obj].Key);
-        // }
 
         if (!(process.env.NODE_ENV === 'local' || process.env.NODE_ENV === 'test')) {
             logger.info('Call out to KTA SDK');
             const sessionId = await getParameter('kta-session-id');
             const inputVars = [
-                {Id: 'BARCODE', Value: metadata.BarcodeQRSep ?? ''},
-                {
-                    Id: 'DOCUMENT_URL',
-                    Value: `s3://${destinationBucketName}/${prefix}/${scannedDocument.Key.split(
-                        '\\'
-                    ).pop()}`
-                },
-                {Id: 'INT_REF_YEAR', Value: metadata.FinalRefYear},
-                {Id: 'INT_REF_NO', Value: metadata.FinalRefNo},
-                {Id: 'BATCH_ID', Value: metadata['{Batch ID}'] ?? ''}
+                { Id: 'BARCODE', Value: metadata.BarcodeQRSep ?? '' },
+                { Id: 'DOCUMENT_URL', Value: `s3://${destinationBucketName}/${prefix}/${fileName}` },
+                { Id: 'INT_REF_YEAR', Value: metadata.FinalRefYear },
+                { Id: 'INT_REF_NO', Value: metadata.FinalRefNo },
+                { Id: 'BATCH_ID', Value: metadata['{Batch ID}'] ?? '' }
             ];
             logger.info(`InputVars: ${JSON.stringify(inputVars)}`);
             await createJob(sessionId, 'Process AWS scanned document', inputVars);
+
+            if (!process.env.RETAIN_FILES) {
+                // Delete the original objects from the Storage Gateway bucket
+                logger.info('Deleting objects from S3');
+                for (const obj in scannedObjects) {
+                    logger.info(`Deleting ${scannedObjects[obj].Key} from S3 bucket ${scanLocation.Bucket}`);
+                    await s3Service.deleteObjectFromBucket(scanLocation.Bucket, scannedObjects[obj].Key);
+                }
+            }
         }
     } catch (error) {
         logger.error(error);
@@ -137,4 +140,4 @@ async function handler(event, context) {
     return 'Success!';
 }
 
-module.exports = {handler, parseLocation};
+module.exports = { handler, parseLocation };
