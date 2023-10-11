@@ -20,9 +20,9 @@ Mappings:
       SubnetIdA: subnet-02f7ae7f6b1db987f
       SubnetIdB: subnet-0a5e7b48efcb931ba
     uat:
-      VpcId: vpc-0e42a25379fa895ec # needs updating
-      SubnetIdA: subnet-02f7ae7f6b1db987f # needs updating
-      SubnetIdB: subnet-02f7ae7f6b1db987f # needs updating
+      VpcId: vpc-0254c4e3ea99b07d1
+      SubnetIdA: subnet-0fd3a560d90368fdc
+      SubnetIdB: subnet-078b2047045b77bb0
     stag:
       VpcId: vpc-0e42a25379fa895ec
       SubnetIdA: subnet-02f7ae7f6b1db987f
