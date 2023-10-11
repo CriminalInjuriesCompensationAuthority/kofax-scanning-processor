@@ -20,7 +20,7 @@ describe('Kofax scanning processorfunction', () => {
         expect(response).toContain('Success!');
     });
 
-    it('Should error if there are no messages to consume', async () => {
+    it('Should resolve successfully if there are no messages to consume', async () => {
         sqsMock.on(ReceiveMessageCommand).resolves(undefined);
         const response = await handler({}, null);
         expect(response).toBe('Nothing to process');

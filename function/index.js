@@ -56,7 +56,7 @@ async function handler(event, context) {
     const response = await sqsService.receiveSQS(receiveInput);
 
     // Return early if there are no messages to consume.
-    if (response?.Messages === undefined || response?.Messages === null) {
+    if (!response?.Messages) {
         logger.info('No messages received');
         return 'Nothing to process';
     }
@@ -115,13 +115,16 @@ async function handler(event, context) {
             logger.info('Call out to KTA SDK');
             const sessionId = await getParameter('kta-session-id');
             const inputVars = [
-                {Id: 'BATCH_DATA', Value: metadata['{Batch ID}']},
-                {Id: 'BATCH_NAME', Value: metadata['{Batch Name}']},
-                {Id: 'pDOCUMENT_NAME', Value: metadata.BarcodeQRSep},
-                {Id: 'pDOCUMENT_PATH', Value: `s3://${destinationBucketName}/${prefix}`},
-                {Id: 'pINDEX_DATA', Value: metadata['{Document ID}']},
-                {Id: 'REF_NO', Value: metadata.FinalRefNo},
-                {Id: 'REF_YEAR', Value: metadata.FinalRefYear}
+                {Id: 'BARCODE', Value: metadata.BarcodeQRSep ?? ''},
+                {
+                    Id: 'DOCUMENT_URL',
+                    Value: `s3://${destinationBucketName}/${prefix}/${scannedDocument.Key.split(
+                        '\\'
+                    ).pop()}`
+                },
+                {Id: 'INT_REF_YEAR', Value: metadata.FinalRefYear},
+                {Id: 'INT_REF_NO', Value: metadata.FinalRefNo},
+                {Id: 'BATCH_ID', Value: metadata['{Batch ID}'] ?? ''}
             ];
             logger.info(`InputVars: ${JSON.stringify(inputVars)}`);
             await createJob(sessionId, 'Process AWS scanned document', inputVars);
