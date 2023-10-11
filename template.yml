@@ -40,6 +40,7 @@ Resources:
       Environment:
         Variables:
           SCANNING_QUEUE: !Ref scanningQueue
+          DEFAULT_PREFIX: 'scanned-documents'
       CodeUri: function/.
       Description: Call the AWS Lambda API
       Timeout: 30
