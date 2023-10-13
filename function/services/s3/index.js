@@ -60,6 +60,7 @@ async function retrieveObjectsFromBucket(bucket, objectPrefix) {
     let objects = [];
 
     for (const key in keys) {
+        logger.info(`Found file ${key} in directory.`)
         const s3Obj = await retrieveObjectFromBucket(bucket, keys[key]);
         objects.push({
             Key: keys[key],

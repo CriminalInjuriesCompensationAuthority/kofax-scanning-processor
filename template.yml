@@ -125,8 +125,7 @@ Resources:
   scanningQueue:
     Type: AWS::SQS::Queue
     Properties:
-      FifoQueue: true
-      QueueName: KofaxScanningQueue.fifo
+      QueueName: KofaxScanningQueue
       KmsMasterKeyId: !Ref scanningQueueKey
       RedrivePolicy:
         deadLetterTargetArn:
@@ -135,8 +134,7 @@ Resources:
   scanningDLQ:
     Type: AWS::SQS::Queue
     Properties:
-      FifoQueue: true
-      QueueName: KofaxScanningDLQ.fifo
+      QueueName: KofaxScanningDLQ
       KmsMasterKeyId: !Ref scanningQueueKey
   scanningQueueKey:
     Type: "AWS::KMS::Key"
