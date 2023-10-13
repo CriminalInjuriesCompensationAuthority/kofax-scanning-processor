@@ -5,9 +5,9 @@ Description: An AWS Lambda application that integrates processes scanned documen
 Parameters:
   Environment:
     Type: String
-    Default: dev
+    Default: development
     Description: Parameter for the environment
-    AllowedValues: ["dev", "uat", "stag", "prod"]
+    AllowedValues: ["development", "uat", "stag", "production"]
   OnPremIpRange:
     Type: String
     Default: "192.168.0.1/16"
@@ -15,22 +15,26 @@ Parameters:
 
 Mappings:
   EnvironmentMap:
-    dev:
+    development:
       VpcId: vpc-0e42a25379fa895ec
       SubnetIdA: subnet-02f7ae7f6b1db987f
       SubnetIdB: subnet-0a5e7b48efcb931ba
+      UserEnvironment: dev
     uat:
       VpcId: vpc-0254c4e3ea99b07d1
       SubnetIdA: subnet-0fd3a560d90368fdc
       SubnetIdB: subnet-078b2047045b77bb0
+      UserEnvironment: uat
     stag:
       VpcId: vpc-0e42a25379fa895ec
       SubnetIdA: subnet-02f7ae7f6b1db987f
       SubnetIdB: subnet-0a5e7b48efcb931ba
-    prod:
+      UserEnvironment: dev
+    production:
       VpcId: vpc-0e42a25379fa895ec # needs updating
       SubnetIdA: subnet-02f7ae7f6b1db987f # needs updating
       SubnetIdB: subnet-02f7ae7f6b1db987f # needs updating
+      UserEnvironment: prod
 Resources:
   function:
     Type: AWS::Serverless::Function
@@ -165,7 +169,9 @@ Resources:
               - "sqs:SendMessage"
             Resource: !GetAtt scanningQueue.Arn
             Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:user/JackBurt_${Environment}'
+              AWS: !Sub
+                - 'arn:aws:iam::${AWS::AccountId}:user/JackBurt_${UserEnv}'
+                - UserEnv: !FindInMap [EnvironmentMap, !Ref Environment, UserEnvironment]
       Queues:
         - !Ref scanningQueue
   scanningQueueKey:
@@ -189,7 +195,9 @@ Resources:
             Principal:
               AWS: 
                 - !GetAtt kofaxProcessorRole.Arn
-                - !Sub 'arn:aws:iam::${AWS::AccountId}:user/JackBurt_${Environment}'
+                - !Sub
+                  - 'arn:aws:iam::${AWS::AccountId}:user/JackBurt_${UserEnv}'
+                  - UserEnv: !FindInMap [EnvironmentMap, !Ref Environment, UserEnvironment]
             Action:
               - "kms:DescribeKey"
               - "kms:Encrypt"

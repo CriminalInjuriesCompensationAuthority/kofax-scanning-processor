@@ -6,9 +6,9 @@ const {sdkStreamMixin} = require('@aws-sdk/util-stream-node');
 const {mockClient} = require('aws-sdk-client-mock');
 const {ReceiveMessageCommand, SQSClient} = require('@aws-sdk/client-sqs');
 const {S3Client, ListObjectsV2Command, GetObjectCommand} = require('@aws-sdk/client-s3');
-const {handler} = require('./index');
+const {handler, parseLocation} = require('./index');
 
-describe('Kofax scanning processorfunction', () => {
+describe('Kofax scanning processor function', () => {
     const sqsMock = mockClient(SQSClient);
 
     it.skip('Should run the function handler', async () => {
@@ -24,6 +24,15 @@ describe('Kofax scanning processorfunction', () => {
         sqsMock.on(ReceiveMessageCommand).resolves(undefined);
         const response = await handler({}, null);
         expect(response).toBe('Nothing to process');
+    });
+
+    it('Should parse the directory location correctly', async() => {
+        const sqsMockMsg = JSON.parse(
+            fs.readFileSync('function/resources/testing/sqs-message.json')
+        );
+        const response = parseLocation(sqsMockMsg);
+        expect(response.Directory).toBe('test-directory/batch-id');
+        expect(response.Bucket).toBe('scanning-source-bucket');
     });
 });
 

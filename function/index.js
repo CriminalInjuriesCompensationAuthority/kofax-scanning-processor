@@ -18,9 +18,9 @@ function parseLocation(response) {
     const bucket = body.s3.bucket.name;
     const key = metadataService.unescape(decodeURIComponent(body.s3.object.key));
 
-    const arr = key.split('\\');
+    const arr = key.split('/');
     arr.pop();
-    const dir = arr.join('\\');
+    const dir = arr.join('/');
 
     return {
         Bucket: bucket,
