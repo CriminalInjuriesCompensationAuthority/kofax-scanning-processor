@@ -51,7 +51,7 @@ async function retrieveObjectsFromBucket(bucket, objectPrefix) {
     let keys;
     try {
         const response = await s3Client.send(listCommand);
-        keys = response.Contents.map(obj => obj.Key);
+        keys = response.Contents.filter(obj => obj.Size > 0).map(obj => obj.Key);
     } catch (error) {
         logger.error(error);
         throw error;
