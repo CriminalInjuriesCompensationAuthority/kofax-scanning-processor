@@ -136,6 +136,38 @@ Resources:
     Properties:
       QueueName: KofaxScanningDLQ
       KmsMasterKeyId: !Ref scanningQueueKey
+  scanningQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Sid: Allow write from S3 Service
+            Effect: Allow
+            Action: "sqs:SendMessage"
+            Resource: !GetAtt scanningQueue.Arn
+            Principal:
+              Service: "s3.amazonaws.com"
+            Condition:
+              StringEquals: 
+                "aws:SourceAccount": !Sub "${AWS::AccountId}"
+              ArnLike: 
+                "aws:SourceArn": !Sub "arn:aws:s3:*:*:kofax-storage-bucket-${Environment}"
+          - Sid: Allow read from function
+            Effect: Allow
+            Action: "sqs:ReceiveMessage"
+            Resource: !GetAtt scanningQueue.Arn
+            Principal:
+              AWS: !GetAtt kofaxProcessorRole.Arn
+          - Sid: Allow read and write
+            Effect: Allow
+            Action: 
+              - "sqs:ReceiveMessage"
+              - "sqs:SendMessage"
+            Resource: !GetAtt scanningQueue.Arn
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:user/JackBurt_${Environment}'
+      Queues:
+        - !Ref scanningQueue
   scanningQueueKey:
     Type: "AWS::KMS::Key"
     Properties:
@@ -165,6 +197,14 @@ Resources:
               - "kms:ReEncrypt*"
               - "kms:GenerateDataKey"
               - "kms:GenerateDataKeyWithoutPlaintext"
+            Resource: "*"
+          - Sid: Allow S3 service
+            Effect: Allow
+            Principal:
+              Service: "s3.amazonaws.com"
+            Action:
+              - "kms:GenerateDataKey"
+              - "kms:Decrypt"
             Resource: "*"
   kofaxProcessorSecurityGroup:
     Type: AWS::EC2::SecurityGroup
