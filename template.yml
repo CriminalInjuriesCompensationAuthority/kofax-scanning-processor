@@ -151,7 +151,7 @@ Resources:
               StringEquals: 
                 "aws:SourceAccount": !Sub "${AWS::AccountId}"
               ArnLike: 
-                "aws:SourceArn": !Sub "arn:aws:s3:*:*:kofax-storage-bucket-${Environment}"
+                "aws:SourceArn": !Sub "arn:aws:s3:*:*:kofax-storage-gateway-bucket-${Environment}"
           - Sid: Allow read from function
             Effect: Allow
             Action: "sqs:ReceiveMessage"
