@@ -156,7 +156,9 @@ Resources:
           - Sid: Allow use of the key
             Effect: Allow
             Principal:
-              AWS: !GetAtt kofaxProcessorRole.Arn
+              AWS: 
+                - !GetAtt kofaxProcessorRole.Arn
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:user/JackBurt_${Environment}'
             Action:
               - "kms:DescribeKey"
               - "kms:Encrypt"
