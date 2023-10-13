@@ -84,7 +84,7 @@ async function handler(event, context) {
         const scannedDocument = scannedObjects.find(obj => obj.Key.endsWith('.pdf'));
 
         // Default prefix to use for upload key
-        const prefix = process.env.DEFAULT_PREFIX;
+        let prefix = process.env.DEFAULT_PREFIX;
 
         // Get CRN (if exists) from metadata object
         const refNumber = metadata.FinalRefNo
