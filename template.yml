@@ -20,21 +20,25 @@ Mappings:
       SubnetIdA: subnet-02f7ae7f6b1db987f
       SubnetIdB: subnet-0a5e7b48efcb931ba
       UserEnvironment: dev
+      KtaBucketKmsKey: 64cd9108-3ab8-4179-a7aa-850198da4afd
     uat:
       VpcId: vpc-0254c4e3ea99b07d1
       SubnetIdA: subnet-0fd3a560d90368fdc
       SubnetIdB: subnet-078b2047045b77bb0
       UserEnvironment: uat
+      KtaBucketKmsKey: af68391f-0be7-4a9b-81a2-4e89bcc7025b
     stag:
       VpcId: vpc-0e42a25379fa895ec
       SubnetIdA: subnet-02f7ae7f6b1db987f
       SubnetIdB: subnet-0a5e7b48efcb931ba
       UserEnvironment: dev
+      KtaBucketKmsKey: 64cd9108-3ab8-4179-a7aa-850198da4afd
     production:
       VpcId: vpc-0e42a25379fa895ec # needs updating
       SubnetIdA: subnet-02f7ae7f6b1db987f # needs updating
       SubnetIdB: subnet-02f7ae7f6b1db987f # needs updating
       UserEnvironment: prod
+      KtaBucketKmsKey: af68391f-0be7-4a9b-81a2-4e89bcc7025b
 Resources:
   function:
     Type: AWS::Serverless::Function
@@ -45,6 +49,7 @@ Resources:
         Variables:
           SCANNING_QUEUE: !Ref scanningQueue
           DEFAULT_PREFIX: 'scanned-documents'
+          KMS_KEY: !FindInMap [EnvironmentMap, !Ref Environment, KtaBucketKmsKey]
       CodeUri: function/.
       Description: Call the AWS Lambda API
       Timeout: 30
