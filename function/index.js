@@ -97,15 +97,15 @@ async function handler(event, context) {
         }
 
         const destinationBucketName = await getParameter('kta-bucket-name');
-        const fileName = scannedDocument.Key.split('\\').pop();
+        const fileName = scannedDocument.Key.split('/').pop();
 
         // Upload the file to S3
         logger.info(
-            `Uploading ${fileName}. to bucket ${destinationBucketName}`
+            `Uploading ${fileName} to bucket ${destinationBucketName}`
         );
         await s3Service.putObjectInBucket(
             destinationBucketName,
-            scannedDocument.Object,
+            await scannedDocument.Object.transformToByteArray(),
             `${prefix}/${fileName}`,
             'application/pdf'
         );
@@ -116,8 +116,8 @@ async function handler(event, context) {
             const inputVars = [
                 { Id: 'BARCODE', Value: metadata.BarcodeQRSep ?? '' },
                 { Id: 'DOCUMENT_URL', Value: `s3://${destinationBucketName}/${prefix}/${fileName}` },
-                { Id: 'INT_REF_YEAR', Value: metadata.FinalRefYear },
-                { Id: 'INT_REF_NO', Value: metadata.FinalRefNo },
+                { Id: 'INT_REF_YEAR', Value: metadata.FinalRefYear ?? 0 },
+                { Id: 'INT_REF_NO', Value: metadata.FinalRefNo ?? 0 },
                 { Id: 'BATCH_ID', Value: metadata['{Batch ID}'] ?? '' }
             ];
             logger.info(`InputVars: ${JSON.stringify(inputVars)}`);
