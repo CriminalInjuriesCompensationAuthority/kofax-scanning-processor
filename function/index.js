@@ -24,7 +24,7 @@ function parseLocation(response) {
 
     return {
         Bucket: bucket,
-        Directory: dir
+        Directory: dir.replace('+', ' ')
     };
 }
 
