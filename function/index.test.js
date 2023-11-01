@@ -63,10 +63,12 @@ describe('Mocking S3', () => {
         const listObjResponse = {
             Contents: [
                 {
-                    Key: 'T_BW_SCAN\\123456\\123456.pdf'
+                    Key: 'T_BW_SCAN/123456/123456.pdf',
+                    Size: 123
                 },
                 {
-                    Key: 'T_BW_SCAN\\123456\\123456.pdf'
+                    Key: 'T_BW_SCAN/123456/123456.pdf',
+                    Size: 123
                 }
             ]
         };
@@ -80,7 +82,8 @@ describe('Mocking S3', () => {
         const listObjResponse = {
             Contents: [
                 {
-                    Key: 'T_BW_SCAN\\123456\\123456.pdf'
+                    Key: 'T_BW_SCAN/123456/123456.pdf',
+                    Size: 123
                 }
             ]
         };
@@ -94,13 +97,16 @@ describe('Mocking S3', () => {
         const listObjResponse = {
             Contents: [
                 {
-                    Key: 'T_BW_SCAN\\123456\\123456.pdf'
+                    Key: 'T_BW_SCAN/123456/123456.pdf',
+                    Size: 123
                 },
                 {
-                    Key: 'T_BW_SCAN\\123456\\123456.txt'
+                    Key: 'T_BW_SCAN/123456/123456.txt',
+                    Size: 123
                 },
                 {
-                    Key: 'T_BW_SCAN\\123456\\123456.pdf'
+                    Key: 'T_BW_SCAN/123456/123456.pdf',
+                    Size: 123
                 }
             ]
         };
