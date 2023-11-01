@@ -1,7 +1,7 @@
 'use strict';
 
 const {mockClient} = require('aws-sdk-client-mock');
-const {ReceiveMessageCommand, SQSClient} = require('@aws-sdk/client-sqs');
+const {ReceiveMessageCommand, SQSClient, DeleteMessageCommand} = require('@aws-sdk/client-sqs');
 const fs = require('fs');
 const createSQSService = require('./index');
 
@@ -22,5 +22,20 @@ describe('SQS Service', () => {
 
         // Assert
         expect(Object.keys(JSON.parse(response))).toContain('Messages');
+    });
+
+    it('Should delete a message from the queue', async () => {
+        // Arrange
+        sqsMock.on(DeleteMessageCommand).resolves('Message Deleted');
+
+        // Act
+        const sqsService = createSQSService();
+        const response = await sqsService.deleteSQS({
+            QueueUrl: 'Queue',
+            ReceiptHandle: 'Receipt Handle'
+        });
+
+        // Assert
+        expect(response).toBe('Message Deleted');
     });
 });

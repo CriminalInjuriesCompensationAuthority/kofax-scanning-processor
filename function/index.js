@@ -129,9 +129,16 @@ async function handler(event, context) {
                     logger.info(`Deleting ${scannedObjects[obj].Key} from S3 bucket ${scanLocation.Bucket}`);
                     await s3Service.deleteObjectFromBucket(scanLocation.Bucket, scannedObjects[obj].Key);
                 }
-                // Finally, delete empty directory object
+                // Delete empty directory object
                 await s3Service.deleteObjectFromBucket(scanLocation.Bucket, scanLocation.Directory);
             }
+
+            // Finally delete the consumed message from the Tempus Queue
+            const deleteInput = {
+                QueueUrl: process.env.SCANNING_QUEUE,
+                ReceiptHandle: message.ReceiptHandle
+            };
+            sqsService.deleteSQS(deleteInput);
         }
     } catch (error) {
         logger.error(error);
