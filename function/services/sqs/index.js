@@ -1,7 +1,7 @@
 'use strict';
 
 const AWSXRay = require('aws-xray-sdk');
-const {SQSClient, ReceiveMessageCommand} = require('@aws-sdk/client-sqs');
+const {SQSClient, ReceiveMessageCommand, DeleteMessageCommand} = require('@aws-sdk/client-sqs');
 
 /** Returns SQS Service object with functions to send, delete and receive messages from a SQS queue */
 function createSqsService() {
@@ -28,8 +28,19 @@ function createSqsService() {
         return response;
     }
 
+    /**
+     * Deletes a given message from a given SQS queue
+     * @param {object} input - Contains the details of the queue and message to delete
+     */
+    async function deleteSQS(input) {
+        const command = new DeleteMessageCommand(input);
+        const response = await sqsClient.send(command);
+        return response;
+    }
+    
     return Object.freeze({
-        receiveSQS
+        receiveSQS,
+        deleteSQS
     });
 }
 
