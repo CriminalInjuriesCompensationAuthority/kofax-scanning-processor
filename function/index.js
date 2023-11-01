@@ -71,11 +71,10 @@ async function handler(event, context) {
             scanLocation.Directory
         );
 
-        // TODO: Validate Object, ensure there's only two, one .pdf and one.txt
-        //       If there's more objects than expected or they're the wrong type, throw an error
+        // If there's more objects than expected or they're the wrong type, throw an error
         validateFiles(scannedObjects);
 
-        // Parse Metadata object into JS Object
+        // Parse Metadata object
         const rawMetadata = scannedObjects.find(obj => obj.Key.endsWith('.txt')).Object;
         const meatadataString = await rawMetadata.transformToString();
         const metadata = metadataService.parseMetadata(meatadataString);
@@ -130,6 +129,8 @@ async function handler(event, context) {
                     logger.info(`Deleting ${scannedObjects[obj].Key} from S3 bucket ${scanLocation.Bucket}`);
                     await s3Service.deleteObjectFromBucket(scanLocation.Bucket, scannedObjects[obj].Key);
                 }
+                // Finally, delete empty directory object
+                await s3Service.deleteObjectFromBucket(scanLocation.Bucket, scanLocation.Directory);
             }
         }
     } catch (error) {
