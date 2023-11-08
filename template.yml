@@ -38,7 +38,7 @@ Mappings:
       SubnetIdA: subnet-0d1fcbfc03a28f433
       SubnetIdB: subnet-08c81bc6ffb13be3d
       UserEnvironment: prod
-      KtaBucketKmsKey: af68391f-0be7-4a9b-81a2-4e89bcc7025b
+      KtaBucketKmsKey: c484249e-f227-472f-a16e-e823ead42d5b
 Resources:
   function:
     Type: AWS::Serverless::Function
