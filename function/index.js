@@ -130,7 +130,9 @@ async function handler(event, context) {
                     await s3Service.deleteObjectFromBucket(scanLocation.Bucket, scannedObjects[obj].Key);
                 }
                 // Delete empty directory object
-                await s3Service.deleteObjectFromBucket(scanLocation.Bucket, scanLocation.Directory);
+                const directoryToDelete = `${scanLocation.Directory}/`;
+                logger.info(`Deleting ${directoryToDelete} from S3 bucket ${scanLocation.Bucket}`);
+                await s3Service.deleteObjectFromBucket(scanLocation.Bucket, directoryToDelete);
             }
 
             // Finally delete the consumed message from the Tempus Queue
