@@ -34,9 +34,9 @@ Mappings:
       UserEnvironment: dev
       KtaBucketKmsKey: 64cd9108-3ab8-4179-a7aa-850198da4afd
     production:
-      VpcId: vpc-0e42a25379fa895ec # needs updating
-      SubnetIdA: subnet-02f7ae7f6b1db987f # needs updating
-      SubnetIdB: subnet-02f7ae7f6b1db987f # needs updating
+      VpcId: vpc-010157aa3b29e0752
+      SubnetIdA: subnet-0d1fcbfc03a28f433
+      SubnetIdB: subnet-08c81bc6ffb13be3d
       UserEnvironment: prod
       KtaBucketKmsKey: af68391f-0be7-4a9b-81a2-4e89bcc7025b
 Resources:
