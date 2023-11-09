@@ -30,7 +30,7 @@ describe('Kofax scanning processor function', () => {
         const sqsMockMsg = JSON.parse(
             fs.readFileSync('function/resources/testing/sqs-message.json')
         );
-        const response = parseLocation(sqsMockMsg);
+        const response = parseLocation(sqsMockMsg.Messages[0]);
         expect(response.Directory).toBe('test-directory/batch-id');
         expect(response.Bucket).toBe('scanning-source-bucket');
     });
