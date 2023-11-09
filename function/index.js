@@ -12,8 +12,8 @@ function serialize(object) {
     return JSON.stringify(object, null, 2);
 }
 
-function parseLocation(response) {
-    const body = JSON.parse(response.Messages[0].Body).Records[0];
+function parseLocation(message) {
+    const body = JSON.parse(message.Body).Records[0];
 
     const bucket = body.s3.bucket.name;
     const key = metadataService.unescape(decodeURIComponent(body.s3.object.key));
@@ -27,6 +27,7 @@ function parseLocation(response) {
         Directory: dir.replace('+', ' ')
     };
 }
+
 
 function validateFiles(messageObjects) {
     // check length of message queue is only 2
@@ -42,29 +43,19 @@ function validateFiles(messageObjects) {
     }
 }
 
-async function handler(event, context) {
-    logger.info(`## CONTEXT: ${serialize(context)}`);
-    logger.info(`## EVENT: ${serialize(event)}`);
+/**
+ * Processes a json message through the Kofax Scanning processor,
+ * parsing Metadata and manipulating objects through S3.
+ * @param {string} message - The message picked up from the queue
+ */
+async function processMessage(message) {
 
     const sqsService = createSqsService();
 
-    // Currently the tempus broker is setup to handle one event at a time
-    const receiveInput = {
-        QueueUrl: process.env.SCANNING_QUEUE,
-        MaxNumberOfMessages: 1
-    };
-    const response = await sqsService.receiveSQS(receiveInput);
-
-    // Return early if there are no messages to consume.
-    if (!response?.Messages) {
-        logger.info('No messages received');
-        return 'Nothing to process';
-    }
-    const message = response.Messages[0];
     logger.info('Message received from SQS queue: ', message);
 
     try {
-        const scanLocation = parseLocation(response);
+        const scanLocation = parseLocation(message);
 
         const scannedObjects = await s3Service.retrieveObjectsFromBucket(
             scanLocation.Bucket,
@@ -109,6 +100,7 @@ async function handler(event, context) {
             'application/pdf'
         );
 
+        // Only call out to KTA if not testing locally
         if (!(process.env.NODE_ENV === 'local' || process.env.NODE_ENV === 'test')) {
             logger.info('Call out to KTA SDK');
             const sessionId = await getParameter('kta-session-id');
@@ -121,30 +113,68 @@ async function handler(event, context) {
             ];
             logger.info(`InputVars: ${JSON.stringify(inputVars)}`);
             await createJob(sessionId, 'Process AWS scanned document', inputVars);
-
-            if (!process.env.RETAIN_FILES) {
-                // Delete the original objects from the Storage Gateway bucket
-                logger.info('Deleting objects from S3');
-                for (const obj in scannedObjects) {
-                    logger.info(`Deleting ${scannedObjects[obj].Key} from S3 bucket ${scanLocation.Bucket}`);
-                    await s3Service.deleteObjectFromBucket(scanLocation.Bucket, scannedObjects[obj].Key);
-                }
-                // Delete empty directory object
-                const directoryToDelete = `${scanLocation.Directory}/`;
-                logger.info(`Deleting ${directoryToDelete} from S3 bucket ${scanLocation.Bucket}`);
-                await s3Service.deleteObjectFromBucket(scanLocation.Bucket, directoryToDelete);
-            }
-
-            // Finally delete the consumed message from the Tempus Queue
-            const deleteInput = {
-                QueueUrl: process.env.SCANNING_QUEUE,
-                ReceiptHandle: message.ReceiptHandle
-            };
-            sqsService.deleteSQS(deleteInput);
         }
+
+        if (!process.env.RETAIN_FILES) {
+            // Delete the original objects from the Storage Gateway bucket
+            logger.info('Deleting objects from S3');
+            for (const obj in scannedObjects) {
+                logger.info(`Deleting ${scannedObjects[obj].Key} from S3 bucket ${scanLocation.Bucket}`);
+                await s3Service.deleteObjectFromBucket(scanLocation.Bucket, scannedObjects[obj].Key);
+            }
+            // Delete empty directory object
+            const directoryToDelete = `${scanLocation.Directory}/`;
+            logger.info(`Deleting ${directoryToDelete} from S3 bucket ${scanLocation.Bucket}`);
+            await s3Service.deleteObjectFromBucket(scanLocation.Bucket, directoryToDelete);
+        }
+
+        // Finally delete the consumed message from the Tempus Queue
+        const deleteInput = {
+            QueueUrl: process.env.SCANNING_QUEUE,
+            ReceiptHandle: message.ReceiptHandle
+        };
+        sqsService.deleteSQS(deleteInput);
+
     } catch (error) {
         logger.error(error);
         throw error;
+    }
+}
+
+/**
+ * Delay by a set number of miliseconds
+ * @param {integer} ms - The number of ms to delay by
+ */
+async function delay(ms) {
+    return await new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function handler(event, context) {
+    logger.info(`## CONTEXT: ${serialize(context)}`);
+    logger.info(`## EVENT: ${serialize(event)}`);
+
+    const sqsService = createSqsService();
+
+    // Currently the tempus broker is setup to handle one event at a time
+    const receiveInput = {
+        QueueUrl: process.env.SCANNING_QUEUE,
+        MaxNumberOfMessages: 3
+    };
+    const response = await sqsService.receiveSQS(receiveInput);
+
+    // Return early if there are no messages to consume.
+    if (!response?.Messages) {
+        logger.info('No messages received');
+        return 'Nothing to process';
+    }
+
+    for (let message in response.Messages) {
+        if (!response.Messages[message]) break;
+        await processMessage(response.Messages[message]);
+
+        // We are delaying by 10 seconds in order to spread the load on KTA
+        // This isn't great practice, but unfortunately we are limited by KTA's performance
+        await delay(10000);
     }
 
     return 'Success!';

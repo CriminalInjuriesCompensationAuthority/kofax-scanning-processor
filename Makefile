@@ -26,9 +26,17 @@ create-source-bucket-notification:
 	aws --endpoint-url=http://localhost:4566 sqs purge-queue --queue-url http://localhost:4566/000000000000/scanning-queue
 
 upload-to-bucket:
-	aws --endpoint-url=http://localhost:4566 s3api put-object --bucket scanning-source-bucket --key "T_BW_SCAN/123456"
+	aws --endpoint-url=http://localhost:4566 s3api put-object --bucket scanning-source-bucket --key "T_BW_SCAN/123456/"
 	aws --endpoint-url=http://localhost:4566 s3api put-object --bucket scanning-source-bucket --key "T_BW_SCAN/123456/123456.txt" --body "./function/resources/testing/meta-with-ref-num.txt" --content-type=text/plain
 	aws --endpoint-url=http://localhost:4566 s3api put-object --bucket scanning-source-bucket --key "T_BW_SCAN/123456/123456.pdf" --body "./function/resources/testing/lorem-ipsum.pdf" --content-type=application/pdf
+
+upload-multiple-scans-to-bucket:
+	aws --endpoint-url=http://localhost:4566 s3api put-object --bucket scanning-source-bucket --key "T_BW_SCAN/123456/"
+	aws --endpoint-url=http://localhost:4566 s3api put-object --bucket scanning-source-bucket --key "T_BW_SCAN/123456/123456.txt" --body "./function/resources/testing/meta-with-ref-num.txt" --content-type=text/plain
+	aws --endpoint-url=http://localhost:4566 s3api put-object --bucket scanning-source-bucket --key "T_BW_SCAN/123456/123456.pdf" --body "./function/resources/testing/lorem-ipsum.pdf" --content-type=application/pdf
+	aws --endpoint-url=http://localhost:4566 s3api put-object --bucket scanning-source-bucket --key "T_BW_SCAN/654321/"
+	aws --endpoint-url=http://localhost:4566 s3api put-object --bucket scanning-source-bucket --key "T_BW_SCAN/654321/654321.txt" --body "./function/resources/testing/meta-with-ref-num.txt" --content-type=text/plain
+	aws --endpoint-url=http://localhost:4566 s3api put-object --bucket scanning-source-bucket --key "T_BW_SCAN/654321/654321.pdf" --body "./function/resources/testing/lorem-ipsum.pdf" --content-type=application/pdf
 
 purge-queue:
 	aws --endpoint-url=http://localhost:4566 sqs purge-queue --queue-url http://localhost:4566/000000000000/scanning-queue

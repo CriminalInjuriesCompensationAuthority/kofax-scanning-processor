@@ -1,7 +1,7 @@
 'use strict';
 
 const config = {
-    testTimeout: 20000,
+    testTimeout: 60000,
     transformIgnorePatterns: ['/dist/.+\\.js']
 };
 
