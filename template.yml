@@ -52,7 +52,7 @@ Resources:
           KMS_KEY: !FindInMap [EnvironmentMap, !Ref Environment, KtaBucketKmsKey]
       CodeUri: function/.
       Description: Call the AWS Lambda API
-      Timeout: 30
+      Timeout: 60
       # Trigger
       Events:
         Trigger:
@@ -71,6 +71,7 @@ Resources:
             !FindInMap [EnvironmentMap, !Ref Environment, SubnetIdB],
           ]
         SecurityGroupIds: [!Ref kofaxProcessorSecurityGroup]
+      ReservedConcurrentExecutions: 1
   libs:
     Type: AWS::Serverless::LayerVersion
     Properties:
