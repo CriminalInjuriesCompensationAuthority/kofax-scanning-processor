@@ -109,7 +109,7 @@ async function processMessage(message) {
                 { Id: 'DOCUMENT_URL', Value: `s3://${destinationBucketName}/${prefix}/${fileName}` },
                 { Id: 'INT_REF_YEAR', Value: metadata.FinalRefYear ?? 0 },
                 { Id: 'INT_REF_NO', Value: metadata.FinalRefNo ?? 0 },
-                { Id: 'BATCH_ID', Value: metadata['{Batch ID}'] ?? '' }
+                { Id: 'BATCH_ID', Value: metadata['{Batch Name}'] ?? '' }
             ];
             logger.info(`InputVars: ${JSON.stringify(inputVars)}`);
             await createJob(sessionId, 'Process AWS scanned document', inputVars);
