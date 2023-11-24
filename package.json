@@ -33,6 +33,7 @@
         "@aws-sdk/client-secrets-manager": "^3.363.0",
         "@aws-sdk/client-sqs": "^3.363.0",
         "@aws-sdk/client-ssm": "^3.363.0",
+        "@aws-sdk/client-storage-gateway": "^3.454.0",
         "@aws-sdk/util-stream-node": "^3.321.1",
         "aws-xray-sdk": "^3.5.0",
         "dotenv": "^16.3.1",
