@@ -24,7 +24,7 @@ function parseLocation(message) {
 
     return {
         Bucket: bucket,
-        Directory: dir.replace('+', ' ')
+        Directory: dir.replace(/\+/g, ' ')
     };
 }
 
@@ -69,6 +69,8 @@ async function processMessage(message) {
         const rawMetadata = scannedObjects.find(obj => obj.Key.endsWith('.txt')).Object;
         const meatadataString = await rawMetadata.transformToString();
         const metadata = metadataService.parseMetadata(meatadataString);
+
+        logger.info(`Processing batch: ${metadata['{Batch Name}'] ?? 'unknown'}`);
 
         // Get our file for upload
         const scannedDocument = scannedObjects.find(obj => obj.Key.endsWith('.pdf'));
@@ -127,6 +129,8 @@ async function processMessage(message) {
             logger.info(`Deleting ${directoryToDelete} from S3 bucket ${scanLocation.Bucket}`);
             await s3Service.deleteObjectFromBucket(scanLocation.Bucket, directoryToDelete);
         }
+
+
 
         // Finally delete the consumed message from the Tempus Queue
         const deleteInput = {
