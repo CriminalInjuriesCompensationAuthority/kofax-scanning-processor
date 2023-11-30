@@ -21,28 +21,28 @@ Mappings:
       SubnetIdB: subnet-0a5e7b48efcb931ba
       UserEnvironment: dev
       KtaBucketKmsKey: 64cd9108-3ab8-4179-a7aa-850198da4afd
-      FileshareArn: !Sub 'arn:aws:storagegateway:eu-west-2:${AWS::AccountId}:share/share-02779971'
+      FileshareArn: share-02779971
     uat:
       VpcId: vpc-0254c4e3ea99b07d1
       SubnetIdA: subnet-0fd3a560d90368fdc
       SubnetIdB: subnet-078b2047045b77bb0
       UserEnvironment: uat
       KtaBucketKmsKey: af68391f-0be7-4a9b-81a2-4e89bcc7025b
-      FileshareArn: !Sub 'arn:aws:storagegateway:eu-west-2:${AWS::AccountId}:share/share-2B88D558'
+      FileshareArn: share-2B88D558
     stag:
       VpcId: vpc-0e42a25379fa895ec
       SubnetIdA: subnet-02f7ae7f6b1db987f
       SubnetIdB: subnet-0a5e7b48efcb931ba
       UserEnvironment: dev
       KtaBucketKmsKey: 64cd9108-3ab8-4179-a7aa-850198da4afd
-      FileshareArn: !Sub 'arn:aws:storagegateway:eu-west-2:${AWS::AccountId}:share/share-02779971'
+      FileshareArn: share-02779971
     production:
       VpcId: vpc-010157aa3b29e0752
       SubnetIdA: subnet-0d1fcbfc03a28f433
       SubnetIdB: subnet-08c81bc6ffb13be3d
       UserEnvironment: prod
       KtaBucketKmsKey: c484249e-f227-472f-a16e-e823ead42d5b
-      FileshareArn: !Sub 'arn:aws:storagegateway:eu-west-2:${AWS::AccountId}:share/share-08611C7B'
+      FileshareArn: share-08611C7B
 Resources:
   function:
     Type: AWS::Serverless::Function
@@ -54,7 +54,9 @@ Resources:
           SCANNING_QUEUE: !Ref scanningQueue
           DEFAULT_PREFIX: 'scanned-documents'
           KMS_KEY: !FindInMap [EnvironmentMap, !Ref Environment, KtaBucketKmsKey]
-          FILESHARE: !FindInMap [EnvironmentMap, !Ref Environment, FileshareArn]          
+          FILESHARE: !Sub
+            - "arn:aws:storagegateway:eu-west-2:${AWS::AccountId}:share/${Share}"
+            - Share: !FindInMap [EnvironmentMap, !Ref Environment, FileshareArn]       
       CodeUri: function/.
       Description: Call the AWS Lambda API
       Timeout: 60
