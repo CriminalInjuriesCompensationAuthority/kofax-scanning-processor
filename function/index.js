@@ -7,28 +7,39 @@ const createSqsService = require('./services/sqs/index');
 const getParameter = require('./services/ssm');
 const logger = require('./services/logging/logger');
 const createJob = require('./services/kta/index');
+const sgwService = require('./services/storage-gateway/index');
 
 function serialize(object) {
     return JSON.stringify(object, null, 2);
 }
 
+/**
+ * Parses the base directory for a scan from the PDF input file
+ * @param {string} message 
+ * @returns a JSON object containing the bucket name as well as the directory of the scan
+ */
 function parseLocation(message) {
     const body = JSON.parse(message.Body).Records[0];
 
     const bucket = body.s3.bucket.name;
     const key = metadataService.unescape(decodeURIComponent(body.s3.object.key));
 
+    // remove the portion of the string after the final '/'
     const arr = key.split('/');
     arr.pop();
     const dir = arr.join('/');
 
     return {
         Bucket: bucket,
+        // replace all + with ' ' (space)
         Directory: dir.replace(/\+/g, ' ')
     };
 }
 
-
+/**
+ * Throws an error if there isn't exactly one pdf and one txt in list of objs
+ * @param {array} messageObjects 
+ */
 function validateFiles(messageObjects) {
     // check length of message queue is only 2
     if (messageObjects.length !== 2) {
@@ -52,7 +63,7 @@ async function processMessage(message) {
 
     const sqsService = createSqsService();
 
-    logger.info('Message received from SQS queue: ', message);
+    logger.info(`Processing message: ${message}`);
 
     try {
         const scanLocation = parseLocation(message);
@@ -63,7 +74,15 @@ async function processMessage(message) {
         );
 
         // If there's more objects than expected or they're the wrong type, throw an error
-        validateFiles(scannedObjects);
+        try {
+            validateFiles(scannedObjects);
+        } catch (error) {
+            logger.error(error);
+            // Return early, this will mean the message doesn't get processed
+            // and will eventually move to the DLQ after re-attempting
+            return;
+        }
+        
 
         // Parse Metadata object
         const rawMetadata = scannedObjects.find(obj => obj.Key.endsWith('.txt')).Object;
@@ -130,18 +149,23 @@ async function processMessage(message) {
             await s3Service.deleteObjectFromBucket(scanLocation.Bucket, directoryToDelete);
         }
 
-
+        // Refresh SGW cache after deletion
+        logger.info('Refreshing SGW cache');
+        sgwService.refreshCache(process.env.FILESHARE)
 
         // Finally delete the consumed message from the Tempus Queue
         const deleteInput = {
             QueueUrl: process.env.SCANNING_QUEUE,
             ReceiptHandle: message.ReceiptHandle
         };
+        logger.info(`Deleting ${message.MessageId} from S3 bucket, relating to batch ${metadata['{Batch Name}'] ?? ''} in ${scanLocation.Directory}`);
         sqsService.deleteSQS(deleteInput);
 
     } catch (error) {
         logger.error(error);
-        throw error;
+        // Return early, this will mean the message doesn't get processed
+        // and will eventually move to the DLQ after re-attempting
+        return;
     }
 }
 
@@ -184,4 +208,4 @@ async function handler(event, context) {
     return 'Success!';
 }
 
-module.exports = { handler, parseLocation };
+module.exports = { handler, parseLocation, validateFiles };

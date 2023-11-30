@@ -1,12 +1,12 @@
 'use strict';
 
 const fs = require('fs');
-const {createReadStream} = require('fs');
-const {sdkStreamMixin} = require('@aws-sdk/util-stream-node');
-const {mockClient} = require('aws-sdk-client-mock');
-const {ReceiveMessageCommand, SQSClient} = require('@aws-sdk/client-sqs');
-const {S3Client, ListObjectsV2Command, GetObjectCommand} = require('@aws-sdk/client-s3');
-const {handler, parseLocation} = require('./index');
+const { createReadStream } = require('fs');
+const { sdkStreamMixin } = require('@aws-sdk/util-stream-node');
+const { mockClient } = require('aws-sdk-client-mock');
+const { ReceiveMessageCommand, SQSClient } = require('@aws-sdk/client-sqs');
+const { S3Client, ListObjectsV2Command, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { handler, parseLocation, validateFiles } = require('./index');
 
 describe('Kofax scanning processor function', () => {
     const sqsMock = mockClient(SQSClient);
@@ -26,7 +26,7 @@ describe('Kofax scanning processor function', () => {
         expect(response).toBe('Nothing to process');
     });
 
-    it('Should parse the directory location correctly', async() => {
+    it('Should parse the directory location correctly', async () => {
         const sqsMockMsg = JSON.parse(
             fs.readFileSync('function/resources/testing/sqs-message.json')
         );
@@ -34,85 +34,46 @@ describe('Kofax scanning processor function', () => {
         expect(response.Directory).toBe('test-directory/batch-id');
         expect(response.Bucket).toBe('scanning-source-bucket');
     });
-});
-
-describe('Mocking S3', () => {
-    let sqsMock;
-    let s3Mock;
-    let sqsMockMsg;
-    let stream;
-    let sdkStream;
-
-    beforeEach(() => {
-        sqsMock = mockClient(SQSClient);
-        s3Mock = mockClient(S3Client);
-        sqsMockMsg = JSON.parse(fs.readFileSync('function/resources/testing/sqs-message.json'));
-
-        stream = createReadStream('function/resources/testing/lorem-ipsum.pdf');
-        sdkStream = sdkStreamMixin(stream);
-
-        sqsMock.on(ReceiveMessageCommand).resolves(sqsMockMsg);
-
-        s3Mock.on(GetObjectCommand).resolves({
-            Body: sdkStream,
-            ContentType: 'application/pdf'
-        });
-    });
 
     it('Should throw an error if there is not one .pdf and one .txt', async () => {
-        const listObjResponse = {
-            Contents: [
-                {
-                    Key: 'T_BW_SCAN/123456/123456.pdf',
-                    Size: 123
-                },
-                {
-                    Key: 'T_BW_SCAN/123456/123456.pdf',
-                    Size: 123
-                }
-            ]
-        };
-        s3Mock.on(ListObjectsV2Command).resolves(listObjResponse);
-        await expect(async () => handler({}, null)).rejects.toThrowError(
-            'Wrong file types - must be one txt and one pdf'
-        );
+        const objects = [
+            {
+                Key: 'T_BW_SCAN/123456/123456.pdf',
+                Object: "test"
+            },
+            {
+                Key: 'T_BW_SCAN/123456/123456.pdf',
+                Object: "test"
+            }
+        ];
+        expect(() => { validateFiles(objects) }).toThrowError('Wrong file types - must be one txt and one pdf');
     });
 
     it('Should throw an error if there is only one file', async () => {
-        const listObjResponse = {
-            Contents: [
-                {
-                    Key: 'T_BW_SCAN/123456/123456.pdf',
-                    Size: 123
-                }
-            ]
-        };
-        s3Mock.on(ListObjectsV2Command).resolves(listObjResponse);
-        await expect(async () => handler({}, null)).rejects.toThrowError(
-            '1 files passed in - there should be 2'
-        );
+        const objects = [
+            {
+                Key: 'T_BW_SCAN/123456/123456.pdf',
+                Object: "test"
+            }
+        ];
+        expect(() => { validateFiles(objects) }).toThrowError('1 files passed in - there should be 2');
     });
 
     it('Should throw an error if there are more than two files', async () => {
-        const listObjResponse = {
-            Contents: [
-                {
-                    Key: 'T_BW_SCAN/123456/123456.pdf',
-                    Size: 123
-                },
-                {
-                    Key: 'T_BW_SCAN/123456/123456.txt',
-                    Size: 123
-                },
-                {
-                    Key: 'T_BW_SCAN/123456/123456.pdf',
-                    Size: 123
-                }
-            ]
-        };
-        s3Mock.on(ListObjectsV2Command).resolves(listObjResponse);
-        await expect(async () => handler({}, null)).rejects.toThrowError(
-            '3 files passed in - there should be 2'
-        );
+        const objects = [
+            {
+                Key: 'T_BW_SCAN/123456/123456.pdf',
+                Object: "test"
+            },
+            {
+                Key: 'T_BW_SCAN/123456/123456.txt',
+                Object: "test"
+            },
+            {
+                Key: 'T_BW_SCAN/123456/123456.pdf',
+                Object: "test"
+            }
+        ];
+        expect(() => { validateFiles(objects) }).toThrowError('3 files passed in - there should be 2');
     });
 });
