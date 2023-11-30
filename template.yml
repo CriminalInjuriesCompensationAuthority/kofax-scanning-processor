@@ -139,7 +139,12 @@ Resources:
                   - kms:ReEncrypt*
                   - kms:GenerateDataKey*
                   - kms:DescribeKey
-                Resource: "*"       
+                Resource: "*"
+              - Sid: StorageGatewayPolicy
+                Effect: Allow
+                Action:
+                  - storagegateway:RefreshCache
+                Resource: "*"
   scanningQueue:
     Type: AWS::SQS::Queue
     Properties:
