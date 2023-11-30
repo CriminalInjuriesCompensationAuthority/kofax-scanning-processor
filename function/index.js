@@ -7,7 +7,7 @@ const createSqsService = require('./services/sqs/index');
 const getParameter = require('./services/ssm');
 const logger = require('./services/logging/logger');
 const createJob = require('./services/kta/index');
-const sgwService = require('./services/storage-gateway/index');
+const refreshCache = require('./services/storage-gateway');
 
 function serialize(object) {
     return JSON.stringify(object, null, 2);
@@ -63,7 +63,7 @@ async function processMessage(message) {
 
     const sqsService = createSqsService();
 
-    logger.info(`Processing message: ${message}`);
+    logger.info(`Processing message: ${serialize(message)}`);
 
     try {
         const scanLocation = parseLocation(message);
@@ -151,14 +151,14 @@ async function processMessage(message) {
 
         // Refresh SGW cache after deletion
         logger.info('Refreshing SGW cache');
-        sgwService.refreshCache(process.env.FILESHARE)
+        await refreshCache(process.env.FILESHARE)
 
         // Finally delete the consumed message from the Tempus Queue
         const deleteInput = {
             QueueUrl: process.env.SCANNING_QUEUE,
             ReceiptHandle: message.ReceiptHandle
         };
-        logger.info(`Deleting ${message.MessageId} from S3 bucket, relating to batch ${metadata['{Batch Name}'] ?? ''} in ${scanLocation.Directory}`);
+        logger.info(`Deleting ${message.MessageId} from sqs queue, relating to batch ${metadata['{Batch Name}'] ?? ''} in ${scanLocation.Directory}`);
         sqsService.deleteSQS(deleteInput);
 
     } catch (error) {
