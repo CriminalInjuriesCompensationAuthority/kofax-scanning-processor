@@ -7,6 +7,7 @@ const { mockClient } = require('aws-sdk-client-mock');
 const { ReceiveMessageCommand, SQSClient } = require('@aws-sdk/client-sqs');
 const { S3Client, ListObjectsV2Command, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { handler, parseLocation, validateFiles } = require('./index');
+const { DoesNotExistException } = require('@aws-sdk/client-ssm');
 
 describe('Kofax scanning processor function', () => {
     const sqsMock = mockClient(SQSClient);
@@ -46,7 +47,7 @@ describe('Kofax scanning processor function', () => {
                 Object: "test"
             }
         ];
-        expect(() => { validateFiles(objects) }).toThrowError('Wrong file types - must be one txt and one pdf');
+        expect(() => { validateFiles(objects) }).toThrow('Wrong file types - must be one txt and one pdf');
     });
 
     it('Should throw an error if there is only one file', async () => {
@@ -56,7 +57,7 @@ describe('Kofax scanning processor function', () => {
                 Object: "test"
             }
         ];
-        expect(() => { validateFiles(objects) }).toThrowError('1 files passed in - there should be 2');
+        expect(() => { validateFiles(objects) }).toThrow('1 files passed in - there should be 2');
     });
 
     it('Should throw an error if there are more than two files', async () => {
@@ -74,6 +75,17 @@ describe('Kofax scanning processor function', () => {
                 Object: "test"
             }
         ];
-        expect(() => { validateFiles(objects) }).toThrowError('3 files passed in - there should be 2');
+        expect(() => { validateFiles(objects) }).toThrow('3 files passed in - there should be 2');
+    });
+
+    it('Should throw error if no objects exist', async () => {
+        const objects = [];
+        let thrownError;
+        try {
+            validateFiles(objects);    
+        } catch (error) {
+            thrownError = error;
+        }
+        expect(thrownError).toBeInstanceOf(DoesNotExistException);
     });
 });

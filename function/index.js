@@ -8,6 +8,7 @@ const getParameter = require('./services/ssm');
 const logger = require('./services/logging/logger');
 const createJob = require('./services/kta/index');
 const refreshCache = require('./services/storage-gateway');
+const { DoesNotExistException } = require('@aws-sdk/client-ssm');
 
 function serialize(object) {
     return JSON.stringify(object, null, 2);
@@ -42,7 +43,9 @@ function parseLocation(message) {
  */
 function validateFiles(messageObjects) {
     // check length of message queue is only 2
-    if (messageObjects.length !== 2) {
+    if (messageObjects.length === 0) { 
+        throw new DoesNotExistException('No objects found');
+    } else if (messageObjects.length !== 2) {
         throw Error(`${messageObjects.length} files passed in - there should be 2`);
     }
     // check one item is a pdf and one is a txt
@@ -77,6 +80,20 @@ async function processMessage(message) {
         try {
             validateFiles(scannedObjects);
         } catch (error) {
+
+            // If DoesNotExistException, assume already processed and delete the message
+            if (error instanceof DoesNotExistException) {
+                logger.warn(`Already processed message - possible duplicate`);
+                
+                const deleteInput = {
+                    QueueUrl: process.env.SCANNING_QUEUE,
+                    ReceiptHandle: message.ReceiptHandle
+                };
+                logger.info(`Deleting ${message.MessageId} from sqs queue as no files were found in ${scanLocation.Directory}`);
+                await sqsService.deleteSQS(deleteInput);
+                return;
+            }
+
             logger.error(error);
             // Return early, this will mean the message doesn't get processed
             // and will eventually move to the DLQ after re-attempting
@@ -151,7 +168,11 @@ async function processMessage(message) {
 
         // Refresh SGW cache after deletion
         logger.info('Refreshing SGW cache');
-        await refreshCache(process.env.FILESHARE)
+        try {
+            await refreshCache(process.env.FILESHARE);
+        } catch (error) {
+            logger.error(error);
+        }
 
         // Finally delete the consumed message from the Tempus Queue
         const deleteInput = {
@@ -159,7 +180,7 @@ async function processMessage(message) {
             ReceiptHandle: message.ReceiptHandle
         };
         logger.info(`Deleting ${message.MessageId} from sqs queue, relating to batch ${metadata['{Batch Name}'] ?? ''} in ${scanLocation.Directory}`);
-        sqsService.deleteSQS(deleteInput);
+        await sqsService.deleteSQS(deleteInput);
 
     } catch (error) {
         logger.error(error);
