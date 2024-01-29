@@ -59,8 +59,8 @@ Resources:
             - Share: !FindInMap [EnvironmentMap, !Ref Environment, FileshareArn]       
       CodeUri: function/.
       Description: Call the AWS Lambda API
-      Timeout: 60
-      MemorySize: 256
+      Timeout: 120
+      MemorySize: 1024
       # Trigger
       Events:
         Trigger:
