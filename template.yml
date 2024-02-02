@@ -194,18 +194,15 @@ Resources:
             Resource: !GetAtt scanningQueue.Arn
             Principal:
               AWS: 
-                - 'Fn::ForEach::Users':
-                  - UserName
+                - !Split 
+                  - ","
                   - !Ref AllowedUsers
-                  - !Sub
-                    - 'arn:aws:iam::${AWS::AccountId}:user/${UserName}_${UserEnv}'
-                    - UserEnv: !FindInMap [EnvironmentMap, !Ref Environment, UserEnvironment]
       Queues:
         - !Ref scanningQueue
   scanningQueueKey:
     Type: "AWS::KMS::Key"
     Properties:
-      Description: A symmetric encryption KMS key to encrypt the Kofax Scanning queues
+      Description: A symmetric encryption KMS key to encrypt sthe Kofax Scanning queues
       EnableKeyRotation: true
       PendingWindowInDays: 20
       KeyPolicy:
@@ -235,12 +232,9 @@ Resources:
             Effect: Allow
             Principal:
               AWS: 
-                - 'Fn::ForEach::Users':
-                  - UserName
+                - !Split 
+                  - ","
                   - !Ref AllowedUsers
-                  - !Sub
-                    - 'arn:aws:iam::${AWS::AccountId}:user/${UserName}_${UserEnv}'
-                    - UserEnv: !FindInMap [EnvironmentMap, !Ref Environment, UserEnvironment]
             Action:
               - "kms:DescribeKey"
               - "kms:Encrypt"
