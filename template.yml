@@ -1,5 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Transform: "AWS::Serverless-2016-10-31"
+Transform:
+  - "AWS::Serverless-2016-10-31"  
+  - "AWS::LanguageExtensions"
 Description: An AWS Lambda application that integrates processes scanned documents from Kofax Capture.
 
 Parameters:
@@ -12,7 +14,10 @@ Parameters:
     Type: String
     Default: "192.168.0.1/16"
     Description: "The CIDR range for CICA's on premise"
-
+  AllowedUsers:
+    Type: AWS::SSM::Parameter::Value<List<String>>
+    Default: /InformedSolutions/IAMUsers
+    Description: "The list of users who should be allowed to access resources from parameter store"
 Mappings:
   EnvironmentMap:
     development:
@@ -188,9 +193,13 @@ Resources:
               - "sqs:SendMessage"
             Resource: !GetAtt scanningQueue.Arn
             Principal:
-              AWS: !Sub
-                - 'arn:aws:iam::${AWS::AccountId}:user/JackBurt_${UserEnv}'
-                - UserEnv: !FindInMap [EnvironmentMap, !Ref Environment, UserEnvironment]
+              AWS: 
+                - 'Fn::ForEach::Users':
+                  - UserName
+                  - !Ref AllowedUsers
+                  - !Sub
+                    - 'arn:aws:iam::${AWS::AccountId}:user/${UserName}_${UserEnv}'
+                    - UserEnv: !FindInMap [EnvironmentMap, !Ref Environment, UserEnvironment]
       Queues:
         - !Ref scanningQueue
   scanningQueueKey:
@@ -209,14 +218,29 @@ Resources:
               AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'             
             Action: "kms:*"
             Resource: "*"
-          - Sid: Allow use of the key
+          - Sid: Allow function use of the key
             Effect: Allow
             Principal:
               AWS: 
                 - !GetAtt kofaxProcessorRole.Arn
-                - !Sub
-                  - 'arn:aws:iam::${AWS::AccountId}:user/JackBurt_${UserEnv}'
-                  - UserEnv: !FindInMap [EnvironmentMap, !Ref Environment, UserEnvironment]
+            Action:
+              - "kms:DescribeKey"
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey"
+              - "kms:GenerateDataKeyWithoutPlaintext"
+            Resource: "*"
+          - Sid: Allow user use of the key
+            Effect: Allow
+            Principal:
+              AWS: 
+                - 'Fn::ForEach::Users':
+                  - UserName
+                  - !Ref AllowedUsers
+                  - !Sub
+                    - 'arn:aws:iam::${AWS::AccountId}:user/${UserName}_${UserEnv}'
+                    - UserEnv: !FindInMap [EnvironmentMap, !Ref Environment, UserEnvironment]
             Action:
               - "kms:DescribeKey"
               - "kms:Encrypt"
