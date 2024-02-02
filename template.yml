@@ -194,7 +194,7 @@ Resources:
             Resource: !GetAtt scanningQueue.Arn
             Principal:
               AWS: 
-                - !Split 
+                !Split 
                   - ","
                   - !Ref AllowedUsers
       Queues:
@@ -232,7 +232,7 @@ Resources:
             Effect: Allow
             Principal:
               AWS: 
-                - !Split 
+                !Split 
                   - ","
                   - !Ref AllowedUsers
             Action:
