@@ -25,7 +25,6 @@
         "pino-pretty": "^3.6.1",
         "prettier": "^1.19.1",
         "speccy": "github:wework/speccy#740d19d88935db7735250c16abc2ad09256b5854",
-        "supertest": "^4.0.2",
         "yamljs": "^0.3.0"
     },
     "dependencies": {
