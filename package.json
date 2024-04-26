@@ -1,6 +1,6 @@
 {
     "name": "kofax-scanning-processor",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "engines": {
         "npm": ">=9.5.0",
         "node": ">=18.0.0"
