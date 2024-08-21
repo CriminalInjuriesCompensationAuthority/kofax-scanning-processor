@@ -154,24 +154,20 @@ async function processMessage(message) {
         }
 
         if (!process.env.RETAIN_FILES) {
-            // Delete the original objects from the Storage Gateway bucket
-            logger.info('Deleting objects from S3');
-            for (const obj in scannedObjects) {
-                logger.info(`Deleting ${scannedObjects[obj].Key} from S3 bucket ${scanLocation.Bucket}`);
-                await s3Service.deleteObjectFromBucket(scanLocation.Bucket, scannedObjects[obj].Key);
-            }
-            // Delete empty directory object
+            // We want to make sure successfully scanned documents are deleted
+            logger.info('Marking scan for deletion');
+            
+            // Our directory containing the scans
             const directoryToDelete = `${scanLocation.Directory}/`;
-            logger.info(`Deleting ${directoryToDelete} from S3 bucket ${scanLocation.Bucket}`);
-            await s3Service.deleteObjectFromBucket(scanLocation.Bucket, directoryToDelete);
-        }
 
-        // Refresh SGW cache after deletion
-        logger.info('Refreshing SGW cache');
-        try {
-            await refreshCache(process.env.FILESHARE);
-        } catch (error) {
-            logger.error(error);
+            // Write a blank file named 'DELETE' to mark it
+            // as an object to delete by a batch script on the Windows server
+            await s3Service.putObjectInBucket(
+                scanLocation.Bucket,
+                '',
+                `${directoryToDelete}DELETE`,
+                ''
+            );
         }
 
         // Finally delete the consumed message from the Tempus Queue
