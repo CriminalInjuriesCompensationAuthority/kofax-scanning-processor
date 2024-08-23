@@ -170,6 +170,14 @@ async function processMessage(message) {
             );
         }
 
+         // Refresh SGW cache after all files are written
+         logger.info('Refreshing SGW cache');
+         try {
+             await refreshCache(process.env.FILESHARE);
+         } catch (error) {
+             logger.error(error);
+         }
+
         // Finally delete the consumed message from the Tempus Queue
         const deleteInput = {
             QueueUrl: process.env.SCANNING_QUEUE,
