@@ -1,13 +1,10 @@
 'use strict';
 
 const fs = require('fs');
-const { createReadStream } = require('fs');
-const { sdkStreamMixin } = require('@aws-sdk/util-stream-node');
-const { mockClient } = require('aws-sdk-client-mock');
-const { ReceiveMessageCommand, SQSClient } = require('@aws-sdk/client-sqs');
-const { S3Client, ListObjectsV2Command, GetObjectCommand } = require('@aws-sdk/client-s3');
-const { handler, parseLocation, validateFiles } = require('./index');
-const { DoesNotExistException } = require('@aws-sdk/client-ssm');
+const {mockClient} = require('aws-sdk-client-mock');
+const {ReceiveMessageCommand, SQSClient} = require('@aws-sdk/client-sqs');
+const {DoesNotExistException} = require('@aws-sdk/client-ssm');
+const {handler, parseLocation, validateFiles} = require('./index');
 
 describe('Kofax scanning processor function', () => {
     const sqsMock = mockClient(SQSClient);
@@ -40,49 +37,55 @@ describe('Kofax scanning processor function', () => {
         const objects = [
             {
                 Key: 'T_BW_SCAN/123456/123456.pdf',
-                Object: "test"
+                Object: 'test'
             },
             {
                 Key: 'T_BW_SCAN/123456/123456.pdf',
-                Object: "test"
+                Object: 'test'
             }
         ];
-        expect(() => { validateFiles(objects) }).toThrow('Wrong file types - must be one txt and one pdf');
+        expect(() => {
+            validateFiles(objects);
+        }).toThrow('Wrong file types - must be one txt and one pdf');
     });
 
     it('Should throw an error if there is only one file', async () => {
         const objects = [
             {
                 Key: 'T_BW_SCAN/123456/123456.pdf',
-                Object: "test"
+                Object: 'test'
             }
         ];
-        expect(() => { validateFiles(objects) }).toThrow('1 files passed in - there should be 2');
+        expect(() => {
+            validateFiles(objects);
+        }).toThrow('1 files passed in - there should be 2');
     });
 
     it('Should throw an error if there are more than two files', async () => {
         const objects = [
             {
                 Key: 'T_BW_SCAN/123456/123456.pdf',
-                Object: "test"
+                Object: 'test'
             },
             {
                 Key: 'T_BW_SCAN/123456/123456.txt',
-                Object: "test"
+                Object: 'test'
             },
             {
                 Key: 'T_BW_SCAN/123456/123456.pdf',
-                Object: "test"
+                Object: 'test'
             }
         ];
-        expect(() => { validateFiles(objects) }).toThrow('3 files passed in - there should be 2');
+        expect(() => {
+            validateFiles(objects);
+        }).toThrow('3 files passed in - there should be 2');
     });
 
     it('Should throw error if no objects exist', async () => {
         const objects = [];
         let thrownError;
         try {
-            validateFiles(objects);    
+            validateFiles(objects);
         } catch (error) {
             thrownError = error;
         }

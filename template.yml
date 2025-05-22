@@ -1,5 +1,5 @@
-AWSTemplateFormatVersion: "2010-09-09"
-Transform: "AWS::Serverless-2016-10-31"
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
 Description: An AWS Lambda application that integrates processes scanned documents from Kofax Capture.
 
 Parameters:
@@ -7,10 +7,10 @@ Parameters:
     Type: String
     Default: development
     Description: Parameter for the environment
-    AllowedValues: ["development", "uat", "stag", "production"]
+    AllowedValues: ['development', 'uat', 'stag', 'production']
   OnPremIpRange:
     Type: String
-    Default: "192.168.0.1/16"
+    Default: '192.168.0.1/16'
     Description: "The CIDR range for CICA's on premise"
 
 Mappings:
@@ -48,15 +48,15 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: index.handler
-      Runtime: nodejs18.x
+      Runtime: nodejs22.x
       Environment:
         Variables:
           SCANNING_QUEUE: !Ref scanningQueue
           DEFAULT_PREFIX: 'scanned-documents'
           KMS_KEY: !FindInMap [EnvironmentMap, !Ref Environment, KtaBucketKmsKey]
           FILESHARE: !Sub
-            - "arn:aws:storagegateway:eu-west-2:${AWS::AccountId}:share/${Share}"
-            - Share: !FindInMap [EnvironmentMap, !Ref Environment, FileshareArn]       
+            - 'arn:aws:storagegateway:eu-west-2:${AWS::AccountId}:share/${Share}'
+            - Share: !FindInMap [EnvironmentMap, !Ref Environment, FileshareArn]
       CodeUri: function/.
       Description: Call the AWS Lambda API
       Timeout: 120
@@ -66,7 +66,7 @@ Resources:
         Trigger:
           Type: Schedule
           Properties:
-            Schedule: "rate(1 minute)"
+            Schedule: 'rate(1 minute)'
       # Function's execution role
       Role: !GetAtt kofaxProcessorRole.Arn
       Tracing: Active
@@ -87,12 +87,12 @@ Resources:
       Description: Dependencies for the kofax scanning processor function.
       ContentUri: lib/.
       CompatibleRuntimes:
-        - nodejs18.x
+        - nodejs22.x
   kofaxProcessorRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
@@ -108,7 +108,7 @@ Resources:
       Policies:
         - PolicyName: root
           PolicyDocument:
-            Version: "2012-10-17"
+            Version: '2012-10-17'
             Statement:
               - Sid: KofaxScannerFunctionQueuePolicy
                 Effect: Allow
@@ -116,7 +116,7 @@ Resources:
                   - sqs:ReceiveMessage
                   - sqs:DeleteMessage
                   - sqs:GetQueueAttributes
-                Resource: "*"
+                Resource: '*'
               - Sid: KofaxScannerFunctionS3Policy
                 Effect: Allow
                 Action:
@@ -124,13 +124,13 @@ Resources:
                   - s3:DeleteObject
                   - s3:PutObject
                   - s3:ListBucket
-                Resource: "*"
+                Resource: '*'
               - Sid: KofaxScannerFunctionSecretsPolicy
                 Effect: Allow
                 Action:
                   - ssm:GetParameter
                   - secretsmanager:GetSecretValue
-                Resource: "*"
+                Resource: '*'
               - Sid: KofaxScannerKmsPolicy
                 Effect: Allow
                 Action:
@@ -139,20 +139,19 @@ Resources:
                   - kms:ReEncrypt*
                   - kms:GenerateDataKey*
                   - kms:DescribeKey
-                Resource: "*"
+                Resource: '*'
               - Sid: StorageGatewayPolicy
                 Effect: Allow
                 Action:
                   - storagegateway:RefreshCache
-                Resource: "*"
+                Resource: '*'
   scanningQueue:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: KofaxScanningQueue
       KmsMasterKeyId: !Ref scanningQueueKey
       RedrivePolicy:
-        deadLetterTargetArn:
-          !GetAtt scanningDLQ.Arn
+        deadLetterTargetArn: !GetAtt scanningDLQ.Arn
         maxReceiveCount: 3
   scanningDLQ:
     Type: AWS::SQS::Queue
@@ -166,26 +165,26 @@ Resources:
         Statement:
           - Sid: Allow write from S3 Service
             Effect: Allow
-            Action: "sqs:SendMessage"
+            Action: 'sqs:SendMessage'
             Resource: !GetAtt scanningQueue.Arn
             Principal:
-              Service: "s3.amazonaws.com"
+              Service: 's3.amazonaws.com'
             Condition:
-              StringEquals: 
-                "aws:SourceAccount": !Sub "${AWS::AccountId}"
-              ArnLike: 
-                "aws:SourceArn": !Sub "arn:aws:s3:*:*:kofax-storage-gateway-bucket-${Environment}"
+              StringEquals:
+                'aws:SourceAccount': !Sub '${AWS::AccountId}'
+              ArnLike:
+                'aws:SourceArn': !Sub 'arn:aws:s3:*:*:kofax-storage-gateway-bucket-${Environment}'
           - Sid: Allow read from function
             Effect: Allow
-            Action: "sqs:ReceiveMessage"
+            Action: 'sqs:ReceiveMessage'
             Resource: !GetAtt scanningQueue.Arn
             Principal:
               AWS: !GetAtt kofaxProcessorRole.Arn
           - Sid: Allow read and write
             Effect: Allow
-            Action: 
-              - "sqs:ReceiveMessage"
-              - "sqs:SendMessage"
+            Action:
+              - 'sqs:ReceiveMessage'
+              - 'sqs:SendMessage'
             Resource: !GetAtt scanningQueue.Arn
             Principal:
               AWS: !Sub
@@ -194,50 +193,50 @@ Resources:
       Queues:
         - !Ref scanningQueue
   scanningQueueKey:
-    Type: "AWS::KMS::Key"
+    Type: 'AWS::KMS::Key'
     Properties:
       Description: A symmetric encryption KMS key to encrypt the Kofax Scanning queues
       EnableKeyRotation: true
       PendingWindowInDays: 20
       KeyPolicy:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Id: kofax-scanning-key-policy
         Statement:
           - Sid: Enable IAM User Permissions
             Effect: Allow
             Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'             
-            Action: "kms:*"
-            Resource: "*"
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
           - Sid: Allow use of the key
             Effect: Allow
             Principal:
-              AWS: 
+              AWS:
                 - !GetAtt kofaxProcessorRole.Arn
                 - !Sub
                   - 'arn:aws:iam::${AWS::AccountId}:user/JackBurt_${UserEnv}'
                   - UserEnv: !FindInMap [EnvironmentMap, !Ref Environment, UserEnvironment]
             Action:
-              - "kms:DescribeKey"
-              - "kms:Encrypt"
-              - "kms:Decrypt"
-              - "kms:ReEncrypt*"
-              - "kms:GenerateDataKey"
-              - "kms:GenerateDataKeyWithoutPlaintext"
-            Resource: "*"
+              - 'kms:DescribeKey'
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:ReEncrypt*'
+              - 'kms:GenerateDataKey'
+              - 'kms:GenerateDataKeyWithoutPlaintext'
+            Resource: '*'
           - Sid: Allow S3 service
             Effect: Allow
             Principal:
-              Service: "s3.amazonaws.com"
+              Service: 's3.amazonaws.com'
             Action:
-              - "kms:GenerateDataKey"
-              - "kms:Decrypt"
-            Resource: "*"
+              - 'kms:GenerateDataKey'
+              - 'kms:Decrypt'
+            Resource: '*'
   kofaxProcessorSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: !Sub
-        - "KofaxScanningProcessorSecurityGroup${Env}"
+        - 'KofaxScanningProcessorSecurityGroup${Env}'
         - Env: !Ref Environment
       GroupDescription: Security group for the kofax scanning processor lamdba function to allow communications out to Tempus.
       VpcId: !FindInMap [EnvironmentMap, !Ref Environment, VpcId]
@@ -249,4 +248,4 @@ Resources:
         - IpProtocol: tcp
           FromPort: 0
           ToPort: 65535
-          CidrIp: "0.0.0.0/0"
+          CidrIp: '0.0.0.0/0'
