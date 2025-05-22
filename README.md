@@ -21,7 +21,7 @@ The project source includes the following directories:
 
 
 # Requirements
-- [Node.js 18.16.1 or later with npm](https://nodejs.org/en/download/releases/)
+- [Node.js 22.15.0 or later with npm greater than 10]](https://nodejs.org/en/download/releases/)
 - The Bash shell. For Linux and macOS, this is included by default. In Windows 10, you can install the [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10) to get a Windows-integrated version of Ubuntu and Bash.
 - [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 
@@ -58,7 +58,7 @@ To check the localstack container is running, you can run `docker ps`
 
 Use `npm run test` to run the function handler locally.
 
-The lambda function polls the queue that was created, so in order for it to pick up anything to process, ensure it contains a valid message. A message can be sent using `make send-message` once the queue has been created.
+The lambda function polls the queue that was created, so in order for it to pick up anything to process, ensure it contains a valid message. A message can be sent using `make upload-to-bucket` once the queue has been created.
 
 # Test
 
