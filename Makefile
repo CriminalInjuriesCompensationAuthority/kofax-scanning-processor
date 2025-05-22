@@ -4,7 +4,7 @@
 #Makefile
 
 init:
-	docker run --name localstack -p 4566:4566 -e SERVICES=s3 -e DEFAULT_REGION=eu-west-2 localstack/localstack
+	docker run --name localstack -p 4566:4566 -e SERVICES=s3,ssm,sqs -e DEFAULT_REGION=eu-west-2 localstack/localstack
 
 start:
 	docker start localstack
