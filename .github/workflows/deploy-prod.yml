@@ -36,6 +36,7 @@ jobs:
       - run: sh ./.github/scripts/assume-role-profile.sh
         env:
           ROLE_ARN: ${{ secrets.ASSUMED_ROLE }}
+          EXTERNAL_ID: ${{ secrets.EXTERNAL_ID }}
 
       # install dependencies into a lambda layer
       - run: sh ./.github/scripts/build-layer.sh
